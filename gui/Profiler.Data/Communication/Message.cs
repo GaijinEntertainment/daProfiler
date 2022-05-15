@@ -31,7 +31,7 @@ namespace Profiler.Data
 			NullFrame,
 			ReportProgress,
 			Handshake,
-			Reserved_0,
+			UniqueName,
 			SynchronizationData,
 			TagsPack,
 			CallstackDescriptionBoard,

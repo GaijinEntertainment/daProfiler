@@ -543,6 +543,7 @@ namespace Profiler.Data
 
 	public class FrameCollection : ObservableCollection<Frame>
 	{
+	    public String uniqueRunName;
 		Dictionary<int, FrameGroup> groups = new Dictionary<int, FrameGroup>();
 		Dictionary<int, SummaryPack> summaries = new Dictionary<int, SummaryPack>();
 

@@ -99,10 +99,14 @@ namespace Profiler
 				{
 					if (System.IO.Path.GetExtension(file) == ".trace")
 					{
+						lock (frames)
+							{ frames.Clear(); }						
 						return OpenTrace<FTraceGroup>(file);
 					}
 					else if (System.IO.Path.GetExtension(file) == ".json")
 					{
+						lock (frames)
+						{ frames.Clear(); }
 						return OpenTrace<ChromeTracingGroup>(file);
 					}
 					else
@@ -291,6 +295,18 @@ namespace Profiler
 						RaiseEvent(new NewConnectionEventArgs(connection));
 
 						break;
+					case DataResponse.Type.UniqueName:
+						String uniqueName = Utils.ReadVlqString(response.Reader);
+						lock (frames)
+						{
+							if (frames.uniqueRunName != uniqueName)
+							{
+								frames.uniqueRunName = uniqueName;
+								frames.Clear();
+							}
+						}
+						break;
+					
 
 					default:
 						lock (frames)

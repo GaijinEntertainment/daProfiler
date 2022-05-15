@@ -141,7 +141,6 @@ namespace Profiler.Controls
 
 		public bool LoadFile(string path)
 		{
-            timeLine.Clear();
 			if (timeLine.LoadFile(path))
 			{
 				_captureName = path;
