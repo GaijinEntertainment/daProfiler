@@ -1,0 +1,12 @@
+Bin/
+gui/obj/
+gui/packages/
+gui/InteractiveDataDisplay.WPF/obj/
+gui/*/obj/
+gui/.vs/
+[Bb]uild*/
+*.suo
+*.user
+*.rej
+*.orig
+.DS_Store
