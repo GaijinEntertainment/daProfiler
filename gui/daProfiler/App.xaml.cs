@@ -42,12 +42,12 @@ namespace Profiler
 			while (rootException.InnerException != null)
 				rootException = rootException.InnerException;
 
-			if (MessageBox.Show("Unhandled Exception:\n" + rootException.ToString(), "daProfiler Crashed! Send report?", MessageBoxButton.OKCancel, MessageBoxImage.Error) == MessageBoxResult.OK)
+			if (MessageBox.Show("Unhandled Exception:\n" + rootException.ToString(), "daProfiler Crashed! We don't accept reports yet", MessageBoxButton.OKCancel, MessageBoxImage.Error) == MessageBoxResult.OK)
 			{
-				using (SentrySdk.Init("https://52c8ab53c0cf47f28263fc211ebd4d38@sentry.io/1493349"))
-				{
-					SentrySdk.CaptureException(rootException);
-				}
+				//using (SentrySdk.Init("https://52c8ab53c0cf47f28263fc211ebd4d38@sentry.io/1493349"))
+				//{
+				//	SentrySdk.CaptureException(rootException);
+				//}
 				return true;
 			}
 			return false;

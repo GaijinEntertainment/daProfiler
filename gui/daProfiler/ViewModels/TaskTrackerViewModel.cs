@@ -375,7 +375,7 @@ namespace Profiler.ViewModels
 
 			if (Trackers.Count == 0)
 			{
-				Trackers.Add(new GithubTaskTracker("https://github.com/bombomby/optick"));
+				Trackers.Add(new GithubTaskTracker("https://github.com/GaijinEntertainment/daProfiler"));
 			}
 
 			var targetTracker = Settings.GlobalSettings.Data.ActiveTracker;

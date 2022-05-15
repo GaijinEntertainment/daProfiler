@@ -130,7 +130,7 @@ namespace Profiler.Views
 		Version CurrentVersion { get { return Assembly.GetExecutingAssembly().GetName().Version; } }
 
 
-		const String LatestVersionGithubURL = "http://api.github.com/repos/bombomby/optick/releases/latest";//fixme:
+		const String LatestVersionGithubURL = "http://api.github.com/repos/GaijinEntertainment/daProfiler/releases/latest";
 
 
 		class NewVersionVM : BaseViewModel
@@ -188,31 +188,6 @@ namespace Profiler.Views
 
 		void SendReportToGoogleAnalytics()
 		{
-			var postData = new Dictionary<string, string>
-			{
-				{ "v", "1" },
-				{ "tid", "UA-58006599-1" },
-				{ "cid", GetUniqueID() },
-				{ "t", "pageview" },
-				{ "dh", "brofiler.com" },
-				{ "dp", "/app.html" },
-				{ "dt", CurrentVersion.ToString() }
-			};
-
-			StringBuilder text = new StringBuilder();
-
-			foreach (var pair in postData)
-			{
-				if (text.Length != 0)
-					text.Append("&");
-
-				text.Append(String.Format("{0}={1}", pair.Key, HttpUtility.UrlEncode(pair.Value)));
-			}
-
-			using (WebClient client = new WebClient())
-			{
-				client.UploadStringAsync(new Uri("http://www.google-analytics.com/collect"), "POST", text.ToString());
-			}
 		}
 
 		private void SafeCopy(Stream from, Stream to)
@@ -272,7 +247,7 @@ namespace Profiler.Views
 
 		private void OpenLatestRelease_Click(object sender, RoutedEventArgs e)
 		{
-			Process.Start("https://github.com/bombomby/optick/releases");
+			Process.Start("https://github.com/GaijinEntertainment/daProfiler/releases");
 		}
 	}
 
