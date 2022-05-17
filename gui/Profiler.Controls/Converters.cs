@@ -267,36 +267,7 @@ namespace Profiler.Controls
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
 			if (value is double)
-			{
-				double duration = (double)value;
-				if (duration < 0.1)
-				{
-					return String.Format("{0:0.0} us", duration*1000);
-				} else if (duration < 1.0)
-				{
-					return String.Format("{0:0} us", duration*1000);
-				}
-				else if (duration < 10.0)
-				{
-					return String.Format("{0:0.000} ms", duration);
-				}
-				else if (duration < 100.0)
-				{
-					return String.Format("{0:0.00} ms", duration);
-				}
-				else if (duration < 1000.0)
-				{
-					return String.Format("{0:0.0} ms", duration);
-				}
-				else if (duration < 10000.0)
-				{
-					return String.Format("{0:0.000} sec", duration / 1000.0);
-				}
-				else
-				{
-					return String.Format("{0:0.0} sec", duration / 1000.0);
-				}
-			}
+				return Profiler.Data.Utils.ConvertMsToString((double)value);
 			return null;
 		}
 

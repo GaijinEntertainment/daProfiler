@@ -15,6 +15,7 @@ namespace Profiler.DirectX
 		{
 			public Vector2 Position;
 			public SharpDX.Color Color;
+			public uint Id;
 		}
 
 		public enum ProjectionType

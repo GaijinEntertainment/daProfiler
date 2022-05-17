@@ -526,12 +526,15 @@ namespace Profiler.Controls
 
 		private void Row_EventNodeHover(Point mousePos, Rect rect, ThreadRow row, EventNode node)
 		{
-			ThreadViewControl.ToolTipPanel = node != null ? new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1:0.000}ms", node.Name, node.Duration), Rect = rect } : null;
+		    EventsThreadRow.HoverId = node != null ? (uint)node.Description.Id : 0u;
+		    Rect rowRect = row == null ? new Rect() : new Rect(0, row.Offset, 1, row.Height);
+			ThreadViewControl.ToolTipPanel = node != null ? new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1}", node.Name, Utils.ConvertMsToString(node.Duration)), Rect = rect, RowRect = rowRect } : null;
 		}
 
 		private void Row_ChartHover(Point mousePos, Rect rect, String text)
 		{
-			ThreadViewControl.ToolTipPanel = text != null ? new ThreadViewControl.TooltipInfo { Text = text, Rect = rect } : null;
+		    EventsThreadRow.HoverId = 0u;
+			ThreadViewControl.ToolTipPanel = text != null ? new ThreadViewControl.TooltipInfo { Text = text, Rect = rect, RowRect = rect} : null;
 		}
 
 		private void OnShowPopup(List<Object> dataContext)

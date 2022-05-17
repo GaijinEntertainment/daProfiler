@@ -39,6 +39,7 @@ namespace Profiler.Data
 	public class EventDescription : Description
 	{
 		private int id;
+		public int Id { get { return id; } }
 		private Color forceColor;
 
 		public Color Color { get; set; }

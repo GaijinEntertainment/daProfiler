@@ -28,29 +28,29 @@ namespace Profiler.DirectX
 			return DIPs[index];
 		}
 
-		public void AddRect(Rect rect, System.Windows.Media.Color color)
+		public void AddRect(Rect rect, System.Windows.Media.Color color, uint id = 0u)
 		{
-			SelectMesh(rect.Location).AddRect(rect, color);
+			SelectMesh(rect.Location).AddRect(rect, color, id);
 		}
 
-		public void AddRect(System.Windows.Point[] rect, System.Windows.Media.Color color)
+		public void AddRect(System.Windows.Point[] rect, System.Windows.Media.Color color, uint id = 0u)
 		{
-			SelectMesh(rect[0]).AddRect(rect, color);
+			SelectMesh(rect[0]).AddRect(rect, color, id);
 		}
 
-		public void AddRect(Rect rect, System.Windows.Media.Color[] colors)
+		public void AddRect(Rect rect, System.Windows.Media.Color[] colors, uint id = 0u)
 		{
-			SelectMesh(rect.Location).AddRect(rect, colors);
+			SelectMesh(rect.Location).AddRect(rect, colors, id);
 		}
 
-		public void AddTri(System.Windows.Point a, System.Windows.Point b, System.Windows.Point c, System.Windows.Media.Color color)
+		public void AddTri(System.Windows.Point a, System.Windows.Point b, System.Windows.Point c, System.Windows.Media.Color color, uint id = 0u)
 		{
-			SelectMesh(a).AddTri(a, b, c, color);
+			SelectMesh(a).AddTri(a, b, c, color, id);
 		}
 
-		public void AddLine(System.Windows.Point start, System.Windows.Point finish, System.Windows.Media.Color color)
+		public void AddLine(System.Windows.Point start, System.Windows.Point finish, System.Windows.Media.Color color, uint id = 0u)
 		{
-			SelectMesh(start).AddLine(start, finish, color);
+			SelectMesh(start).AddLine(start, finish, color, id);
 		}
 
 		public List<Mesh> Freeze(SharpDX.Direct3D11.Device device)

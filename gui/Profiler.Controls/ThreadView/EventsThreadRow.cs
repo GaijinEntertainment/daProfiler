@@ -124,6 +124,7 @@ namespace Profiler.Controls
 		}
 
 		const float NodeGradientShade = 0.85f;
+		public double DepthToHeight(double level) {return level / MaxDepth;}
 
 		void BuildMeshNode(DirectX.ComplexDynamicMesh builder, ThreadScroll scroll, EventNode node, int level, Color parentColor)
 		{
@@ -132,8 +133,8 @@ namespace Profiler.Controls
 
 			Interval interval = scroll.TimeToUnit(node.Entry);
 
-			double y = (double)level / MaxDepth;
-			double h = 1.0 / MaxDepth;
+			double y = DepthToHeight((double)level);
+			double h = DepthToHeight(1.0);
 
 			Color nodeColor = node.Description.ForceColor;
 
@@ -147,7 +148,7 @@ namespace Profiler.Controls
 
 			Color nodeGradColor = DirectX.Utils.MultiplyColor(nodeColor, NodeGradientShade);
 
-			builder.AddRect(new Rect(interval.Left, y, interval.Width, h), new Color[] { nodeColor, nodeGradColor, nodeGradColor, nodeColor });
+			builder.AddRect(new Rect(interval.Left, y, interval.Width, h), new Color[] { nodeColor, nodeGradColor, nodeGradColor, nodeColor }, (uint)node.Description.Id);
 
 			foreach (EventNode child in node.Children)
 			{
@@ -248,12 +249,13 @@ namespace Profiler.Controls
 		double TextDrawThreshold = 8.0 * RenderSettings.dpiScaleX;
 		double TextDrawOffset = 1.5 * RenderSettings.dpiScaleY;
 
-		public static void Draw(DirectX.DirectXCanvas canvas, List<Mesh> meshes, Matrix world)
+		public static void Draw(DirectX.DirectXCanvas canvas, List<Mesh> meshes, Matrix world, uint id = 0, double ftime = 0)
 		{
+			SharpDX.Vector4 custom = new SharpDX.Vector4(id, (float)ftime, 0, 0);
 			meshes.ForEach(mesh =>
 			{
 				mesh.WorldTransform = world;
-				canvas.Draw(mesh);
+				canvas.Draw(mesh, custom);
 			});
 		}
 
@@ -262,6 +264,8 @@ namespace Profiler.Controls
 			return frame.Root;
 		}
 
+		public uint SelectedId = 0;
+		public static uint HoverId = 0;
 		public override void Render(DirectX.DirectXCanvas canvas, ThreadScroll scroll, DirectXCanvas.Layer layer, Rect box)
 		{
 			if (!IsVisible)
@@ -271,7 +275,7 @@ namespace Profiler.Controls
 
 			if (layer == DirectXCanvas.Layer.Background)
 			{
-				Draw(canvas, Blocks, world);
+				Draw(canvas, Blocks, world, HoverId == 0u ? SelectedId : HoverId, ((System.DateTime.Now.Ticks / (double)TimeSpan.TicksPerSecond)%0.5)*2);
 
 				if (FilterMesh != null)
 				{
@@ -313,7 +317,15 @@ namespace Profiler.Controls
 										 color,
 										 TextAlignment.Left,
 										 intervalPx.Width - TextDrawOffset);
+						if (intervalPx.Width > (entry.Description.Name.Length + 5) * 8)//fast text width 
+                        {
+							canvas.Text.Draw(new Point(intervalPx.Left + TextDrawOffset, Offset + level * RenderParams.BaseHeight),
+											 Profiler.Data.Utils.ConvertMsToString(entry.Duration),
+											 color,
+											 TextAlignment.Right,
+											 intervalPx.Width - TextDrawOffset);
 
+						}
 						return true;
 					});
 				});
@@ -566,6 +578,7 @@ namespace Profiler.Controls
 			EventNode node = null;
 			EventFrame frame = null;
 			int level = FindNode(point, scroll, out frame, out node);
+			SelectedId = 0u;
 			if (EventNodeSelected != null)
 			{
 				ITick tick = scroll.PixelToTime(point.X);
@@ -575,6 +588,7 @@ namespace Profiler.Controls
 				}
 				if (frame != null)
 				{
+					SelectedId = (node == null || node.Description == null) ? 0u : (uint)node.Description.Id;
 					EventNodeSelected(this, frame, node);
 				}
 			}

@@ -26,11 +26,12 @@ namespace Profiler.DirectX
 		public RenderControl RenderCanvas;
 		public SwapChainDescription SwapChainDesc;
 
-		[StructLayout(LayoutKind.Sequential, Size = 32)]
+		[StructLayout(LayoutKind.Sequential, Size = 48)]
 		public struct WorldProjection
 		{
 			public SharpDX.Matrix View;
 			public SharpDX.Matrix World;
+			public SharpDX.Vector4 Custom;
 		}
 
 		SharpDX.Matrix UnitView;
@@ -155,7 +156,8 @@ namespace Profiler.DirectX
 			DefaultFragment = LoadFragment(@"Basic", new[]
 			{
 				new InputElement("POSITION", 0, Format.R32G32_Float, 0, 0),
-				new InputElement("COLOR", 0, Format.R8G8B8A8_UNorm, 8, 0)
+				new InputElement("COLOR", 0, Format.R8G8B8A8_UNorm, 8, 0),
+				new InputElement("TEXCOORD", 0, Format.R32_UInt, 12, 0)
 			});
 
 			TextFragment = LoadFragment(@"Text", new[]
@@ -265,6 +267,10 @@ namespace Profiler.DirectX
 		}
 
 		public void Draw(Mesh mesh)
+        {
+			Draw(mesh, new SharpDX.Vector4(0));
+        }
+		public void Draw(Mesh mesh, SharpDX.Vector4 Custom)
 		{
 			if (mesh != null && mesh.Fragment != null && mesh.VertexBuffer != null && mesh.IndexBuffer != null)
 			{
@@ -272,6 +278,7 @@ namespace Profiler.DirectX
 
 				System.Windows.Media.Matrix world = System.Windows.Media.Matrix.Multiply(mesh.LocalTransform, mesh.WorldTransform);
 				WP.World = Utils.Convert(world);
+				WP.Custom = Custom;
 
 				SharpDX.Matrix vw = SharpDX.Matrix.Multiply(WP.World, WP.View);
 				Vector4 posA = Vector2.Transform(new Vector2((float)mesh.AABB.Left, (float)mesh.AABB.Bottom), vw);
@@ -301,7 +308,7 @@ namespace Profiler.DirectX
 			RenderDevice.ImmediateContext.OutputMerger.SetBlendState(isOn ? AlphaBlendState : null);
 		}
 
-		public void Setup(Fragment fragment, VertexBufferBinding vb, SharpDX.Direct3D11.Buffer ib, PrimitiveTopology topology = PrimitiveTopology.TriangleList)
+		public void Setup(Fragment fragment, VertexBufferBinding vb, SharpDX.Direct3D11.Buffer ib, PrimitiveTopology topology)
 		{
 			var context = RenderDevice.ImmediateContext;
 

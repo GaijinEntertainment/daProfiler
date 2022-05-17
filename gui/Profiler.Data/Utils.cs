@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Security;
@@ -12,6 +13,36 @@ namespace Profiler.Data
 {
 	public static class Utils
 	{
+		public static String ConvertMsToString(double duration)
+    	{
+			if (duration < 0.1)
+			{
+     			return String.Format(CultureInfo.InvariantCulture, "{0:0.0} us", duration * 1000);
+			} else if (duration < 1.0)
+			{
+    			return String.Format(CultureInfo.InvariantCulture, "{0:0} us", duration * 1000);
+			}
+			else if (duration < 10.0)
+    		{
+				return String.Format(CultureInfo.InvariantCulture, "{0:0.000} ms", duration);
+			}
+			else if (duration < 100.0)
+    		{
+				return String.Format(CultureInfo.InvariantCulture, "{0:0.00} ms", duration);
+			}
+			else if (duration < 1000.0)
+			{
+				return String.Format(CultureInfo.InvariantCulture, "{0:0.0} ms", duration);
+    		}
+			else if (duration < 10000.0)
+			{
+				return String.Format(CultureInfo.InvariantCulture, "{0:0.000} sec", duration / 1000.0);
+			}
+			else
+			{
+				return String.Format(CultureInfo.InvariantCulture, "{0:0.0} sec", duration / 1000.0);
+			}
+		}
 		public static int BinarySearchIndex<T, U>(IList<T> frames, U value, Func<T, U> mapping) where U : IComparable
 		{
 			if (frames == null || frames.Count == 0)

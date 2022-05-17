@@ -45,6 +45,9 @@ namespace Profiler.Controls
 		private SolidColorBrush _frameHover;
 		public SolidColorBrush FrameHover { get { if (_frameHover == null) _frameHover = FindResource("OptickFrameHover") as SolidColorBrush; return _frameHover; } }
 
+		private SolidColorBrush _frameHoverFrame;
+		public SolidColorBrush FrameHoverFrame { get { if (_frameHoverFrame== null) _frameHoverFrame = FindResource("OptickFrameHoverFrame") as SolidColorBrush; return _frameHoverFrame; } }
+
 		Color MeasureBackground;
 		Color HoverBackground;
 
@@ -211,11 +214,13 @@ namespace Profiler.Controls
 		{
 			public String Text;
 			public Rect Rect;
+			public Rect RowRect;
 
 			public void Reset()
 			{
 				Text = String.Empty;
 				Rect = new Rect();
+				RowRect = new Rect();
 			}
 		}
 
@@ -249,6 +254,8 @@ namespace Profiler.Controls
 
 			surface.SizeChanged += new SizeChangedEventHandler(ThreadView_SizeChanged);
 			surface.OnDraw += OnDraw;
+
+			CompositionTarget.Rendering += AnimationTick;
 
 			InitInputEvent();
 
@@ -332,6 +339,8 @@ namespace Profiler.Controls
 			System.Drawing.Point e = new System.Drawing.Point(args.X, args.Y);
 			foreach (ThreadRow row in Rows)
 			{
+			    if (row is EventsThreadRow)
+					((EventsThreadRow)row).SelectedId = 0u;
 				if (row.Offset <= e.Y && e.Y <= row.Offset + row.Height)
 				{
 					row.OnMouseClick(new Point(e.X, e.Y - row.Offset), Scroll);
@@ -474,7 +483,10 @@ namespace Profiler.Controls
 		{
 			surface.Update();
 		}
-
+		void AnimationTick(object sender, EventArgs e)
+		{
+			UpdateSurface();
+		}
 		private void UpdateBar()
 		{
 			scrollBar.Value = Scroll.ViewUnit.Left;
@@ -498,10 +510,14 @@ namespace Profiler.Controls
 
 					Rect rect = new Rect(intervalPx.Left, row.Offset /*+ 2.0 * RenderParams.BaseMargin*/, intervalPx.Width, row.Height /*- 4.0 * RenderParams.BaseMargin*/);
 
-					for (int i = 0; i < SelectionBorderCount; ++i)
-					{
-						rect.Inflate(SelectionBorderStep, SelectionBorderStep);
-						SelectionMesh.AddRect(rect, FrameSelection.Color);
+					double left = intervalPx.Left, right = intervalPx.Left + intervalPx.Width, top = row.Offset;
+					SelectionMesh.AddRect(new Rect(left - 1.5, top - 1, 0.75, row.Height+2), FrameSelection.Color);
+					SelectionMesh.AddRect(new Rect(right + 0.75, top - 1, 0.75, row.Height+2), FrameSelection.Color);
+					if (selection.Focus == null && row is EventsThreadRow)
+                    {
+						EventsThreadRow eventRow = row as EventsThreadRow;
+						Rect rect2 = new Rect(intervalPx.Left, row.Offset + row.Height*eventRow.DepthToHeight(selection.Frame.RootEntry.Depth), intervalPx.Width, row.Height*eventRow.DepthToHeight(1));
+						SelectionMesh.AddRect(rect2, Color.FromArgb(255,255,255,255));
 					}
 				}
 			}
@@ -532,6 +548,16 @@ namespace Profiler.Controls
 			if (Input.IsDrag)
 				return;
 
+			if (ToolTipPanel != null && !ToolTipPanel.Rect.IsEmpty)
+			{
+				HoverLines.AddRect(ToolTipPanel.Rect, FrameHover.Color);
+				double left = ToolTipPanel.Rect.Left, right = ToolTipPanel.Rect.Right, top = 0, bottom = 1000;
+				HoverLines.AddRect(new Rect(left - 1.5, top - 1, 0.75, bottom), FrameHoverFrame.Color);
+				HoverLines.AddRect(new Rect(right + 0.75, top - 1, 0.75, bottom), FrameHoverFrame.Color);
+				if (!ToolTipPanel.RowRect.IsEmpty)
+					HoverMesh.AddRect(new Rect(ToolTipPanel.Rect.Left, ToolTipPanel.RowRect.Top, ToolTipPanel.Rect.Width, ToolTipPanel.RowRect.Height), Color.FromArgb(30, FrameHoverFrame.Color.R, FrameHoverFrame.Color.G, FrameHoverFrame.Color.B));
+			}
+
 			if (ToolTipPanel != null && !String.IsNullOrWhiteSpace(ToolTipPanel.Text))
 			{
 				Size size = surface.Text.Measure(ToolTipPanel.Text);
@@ -541,11 +567,6 @@ namespace Profiler.Controls
 
 				textArea.Inflate(ToolTipMargin);
 				HoverMesh.AddRect(textArea, HoverBackground);
-			}
-
-			if (ToolTipPanel != null && !ToolTipPanel.Rect.IsEmpty)
-			{
-				HoverLines.AddRect(ToolTipPanel.Rect, FrameHover.Color);
 			}
 
 			HoverLines.Update(canvas.RenderDevice);

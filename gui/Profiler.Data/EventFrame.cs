@@ -206,7 +206,7 @@ namespace Profiler.Data
 			get
 			{
 				double work = CalculateWork(Header);
-				return String.Format("Work: {0:0.###}ms   Wait: {1:0.###}ms", work, Duration - work).Replace(',', '.');
+				return String.Format("Work: {0}  Wait: {1}", Utils.ConvertMsToString(work), Utils.ConvertMsToString(Duration - work));
 			}
 		}
 
