@@ -295,7 +295,7 @@ namespace Profiler.Data
 				if (callstack[firstResolved].IsResolved)
 					break;
 			}
-			int lastIndex = Math.Min(callstack.Count-1, firstResolved);
+			int lastIndex = Math.Min(callstack.Count-1, firstResolved+1);
 			if (index > lastIndex)
 				return;
 
