@@ -32,7 +32,7 @@ namespace Profiler
 			Init();
 		}
 
-		void InitNode(EventNode node, double frameStartMS, int level)
+		void InitNode(EventNode node, double frameStartMS, int level, Color color)
 		{
 			double duration = FrameHeightConverter.Convert(node.Entry.Duration);
 
@@ -42,7 +42,7 @@ namespace Profiler
 			Rectangle rect = new Rectangle();
 			rect.Width = double.NaN;
 			rect.Height = duration;
-			rect.Fill = new SolidColorBrush(node.Entry.Description.ForceColor);
+			rect.Fill = new SolidColorBrush(color);
 
 			double startTime = (node.Entry.StartMS - frameStartMS);
 			rect.Margin = new Thickness(0, 0, 0, FrameHeightConverter.Convert(startTime));
@@ -50,10 +50,10 @@ namespace Profiler
 
 			LayoutRoot.Children.Add(rect);
 
-			foreach (EventNode child in node.Children)
-			{
-				InitNode(child, frameStartMS, level + 1);
-			}
+			//foreach (EventNode child in node.Children)
+			//{
+			//	InitNode(child, frameStartMS, level + 1, color);
+			//}
 		}
 
 		void Init()
@@ -64,10 +64,11 @@ namespace Profiler
 				LayoutRoot.Children.Clear();
 
 				double frameStartMS = frame.Header.StartMS;
+				Color color = EventDescription.GenerateRandomColor(frame.Group.Board.ID.ToString());
 
 				foreach (EventNode node in frame.Root.Children)
 				{
-					InitNode(node, frameStartMS, 0);
+					InitNode(node, frameStartMS, 0, color);
 				}
 			}
 		}
