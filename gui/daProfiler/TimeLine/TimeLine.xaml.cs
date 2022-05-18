@@ -569,6 +569,17 @@ namespace Profiler
 			});
 		}
 
+		public void GetCapture(IPAddress address, UInt16 port, SecureString password)
+		{
+            ProfilerClient.Get().IpAddress = address;
+            ProfilerClient.Get().Port = port;
+
+			Task.Run(() =>
+			{
+				ProfilerClient.Get().SendMessage(new GetCaptureMessage(), true);
+			});
+		}
+
 		public void SendSettings(CaptureSettings settings)
 		{
 			Task.Run(() => { ProfilerClient.Get().SendMessage(new SetSettingsMessage() {Settings = settings}, false); });

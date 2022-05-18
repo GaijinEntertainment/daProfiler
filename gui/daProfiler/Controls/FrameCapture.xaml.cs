@@ -273,8 +273,17 @@ namespace Profiler.Controls
 
 		private void Button_Capture(object sender, System.Windows.RoutedEventArgs e)
 		{
+            var platform = AddressBarVM.Selection;
+
+			if (platform == null)
+				return;
+
+            IPAddress address = null;
+            if (!IPAddress.TryParse(platform.Address, out address))
+                return;
+
 			MainViewModel vm = DataContext as MainViewModel;
-			Task.Run(() => ProfilerClient.Get().SendMessage(new GetCaptureMessage(), true));
+			timeLine.GetCapture(address, platform.Port, platform.Password);
 		}
 
         private void ClearSamplingButton_Click(object sender, System.Windows.RoutedEventArgs e)
