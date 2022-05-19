@@ -298,9 +298,11 @@ namespace Profiler.Controls
 					GetTree(frame).ForEachChild((node, level) =>
 					{
 						Entry entry = (node as EventNode).Entry;
+						if (entry.Finish < scroll.ViewTime.Start || entry.Start > scroll.ViewTime.Finish)
+							return false;
 						Interval intervalPx = scroll.TimeToPixel(entry);
 
-						if (intervalPx.Width < TextDrawThreshold || intervalPx.Right < 0.0 || level >= MaxDepth)
+						if (intervalPx.Width < TextDrawThreshold || intervalPx.Left > scroll.Width || intervalPx.Right < 0.0 || level >= MaxDepth)
 							return false;
 
 						if (intervalPx.Left < 0.0)

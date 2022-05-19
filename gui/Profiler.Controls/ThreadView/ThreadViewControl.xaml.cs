@@ -337,6 +337,7 @@ namespace Profiler.Controls
 		private void MouseClickLeft(System.Windows.Forms.MouseEventArgs args)
 		{
 			System.Drawing.Point e = new System.Drawing.Point(args.X, args.Y);
+			hasSelection = false;
 			foreach (ThreadRow row in Rows)
 			{
 			    if (row is EventsThreadRow)
@@ -344,6 +345,8 @@ namespace Profiler.Controls
 				if (row.Offset <= e.Y && e.Y <= row.Offset + row.Height)
 				{
 					row.OnMouseClick(new Point(e.X, e.Y - row.Offset), Scroll);
+					if (((EventsThreadRow)row).SelectedId != 0u)
+						hasSelection = true;
 				}
 			}
 		}
@@ -388,11 +391,11 @@ namespace Profiler.Controls
 					row.OnMouseMove(new Point(e.X, e.Y - row.Offset), Scroll);
 				}
 
-				updateSurface = true;
+				//updateSurface = true;
 			}
 
 			if (updateSurface)
-				UpdateSurface();
+				 UpdateSurface();
 		}
 
 		private void RenderCanvas_MouseUp(object sender, System.Windows.Forms.MouseEventArgs e)
@@ -479,13 +482,21 @@ namespace Profiler.Controls
 			}
 		}
 
+		private bool surfaceInvalided = true, hasSelection = false;
+		private bool HasAnimations {get {return hasSelection || EventsThreadRow.HoverId != 0u;}}
+		private bool HasToRedraw {get {return surfaceInvalided || HasAnimations;}}
 		public void UpdateSurface()
 		{
-			surface.Update();
+			surfaceInvalided = true;
 		}
 		void AnimationTick(object sender, EventArgs e)
 		{
-			UpdateSurface();
+			if (HasToRedraw)
+			{
+				surface.Update();
+				surfaceInvalided = HasAnimations;
+			}
+
 		}
 		private void UpdateBar()
 		{
