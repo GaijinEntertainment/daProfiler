@@ -175,9 +175,11 @@ namespace Profiler.ViewModels
 
 		// Frame Limits
 		Numeric ThreadsSamplingRate = new Numeric("Thread sampling rate", "Other threads are sampled each Nth sampling ") { Value = 2 };
-		Numeric MaxSpikeLimitMs = new Numeric("Min Spike (ms)", "Automatically capture spike of not shorter than") { Value = 30 };
+		Numeric MaxSpikeLimitMs = new Numeric("Min Spike (ms)", "Automatically capture spike of not shorter than") { Value = 100 };
 		Numeric SpikeMulAvg = new Numeric("Spike Average Mul", "Automatically capture spike of not shorter than avg*mul + add") { Value = 3 };
 		Numeric SpikeAvgAddMs = new Numeric("Spike Average Add (ms)", "Automatically capture spike of not shorter than avg*mul + add") { Value = 1 };
+		Numeric SaveFramesBeforeSpike = new Numeric("Frames before spike", "Saves N frames predecessing spiked frame") { Value = 3 };
+		Numeric SaveFramesAfterSpike = new Numeric("Frames after spike", "Saves N frames following spiked frame") { Value = 2 };
 		Numeric ProfilingFramesLimit  = new Numeric("Profile frames limit", "Automatically dump capture if captured limit frames (0 - inf)") { Value = 0 };
 		Numeric ProfileSizeLimitMb = new Numeric("Profile size limit (mb)", "Automatically stops capture if captured size limit exceeds (0 - inf)") { Value = 0 };
 
@@ -224,6 +226,8 @@ namespace Profiler.ViewModels
 			SpikesParams.Add(MaxSpikeLimitMs);
 			SpikesParams.Add(SpikeMulAvg);
 			SpikesParams.Add(SpikeAvgAddMs);
+			SpikesParams.Add(SaveFramesBeforeSpike);
+			SpikesParams.Add(SaveFramesAfterSpike);
 			SamplingParams.Add(ThreadsSamplingRate);
 			CaptureLimits.Add(ProfilingFramesLimit);
 			CaptureLimits.Add(ProfileSizeLimitMb);			
@@ -255,6 +259,8 @@ namespace Profiler.ViewModels
 			settings.MaxSpikeLimitMs = (uint)(MaxSpikeLimitMs.Value);
 			settings.SpikeMulAvg = (uint)(SpikeMulAvg.Value);
 			settings.SpikeAvgAddMs = (uint)(SpikeAvgAddMs.Value);
+			settings.SaveFramesBeforeSpike = (uint)(SaveFramesBeforeSpike.Value);
+			settings.SaveFramesAfterSpike = (uint)(SaveFramesAfterSpike.Value);
 			settings.ProfilingFramesLimit = (uint)(ProfilingFramesLimit.Value);
 			settings.ProfileSizeLimitMb  = (uint)(ProfileSizeLimitMb.Value);
 
@@ -274,6 +280,8 @@ namespace Profiler.ViewModels
 			MaxSpikeLimitMs.Value = settings.MaxSpikeLimitMs;
 			SpikeMulAvg.Value = settings.SpikeMulAvg;
 			SpikeAvgAddMs.Value = settings.SpikeAvgAddMs;
+			SaveFramesBeforeSpike.Value = settings.SaveFramesBeforeSpike;
+			SaveFramesAfterSpike.Value = settings.SaveFramesAfterSpike;
 			ProfilingFramesLimit.Value = settings.ProfilingFramesLimit;
 			ProfileSizeLimitMb.Value = settings.ProfileSizeLimitMb;
 			OnPropertyChanged();

@@ -78,13 +78,13 @@
         </GroupBox>
 
         <GroupBox MahApps:ControlsHelper.ContentCharacterCasing="Normal" Header="Spikes" Margin="0,0,0,2">
-            <ItemsControl ItemsSource="{Binding SpikesParams}">
+            <ItemsControl ItemsSource="{Binding SpikesParams}" HorizontalAlignment="Center" FontSize="12" Width="200">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical" Margin="1" ToolTip="{Binding Description}">
+                        <Grid Margin="1" ToolTip="{Binding Description}">
                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Left" />
-                            <MahApps:NumericUpDown Grid.Column="1" MahApps:TextBoxHelper.Watermark="{Binding Name}" Value="{Binding Value}" Minimum="0" />
-                        </StackPanel>
+                            <MahApps:NumericUpDown Grid.Column="1" MahApps:TextBoxHelper.Watermark="{Binding Name}" Value="{Binding Value}" Minimum="0" TextAlignment="Right" DockPanel.Dock="Right" Width="0" ButtonsAlignment="Right" HideUpDownButtons="True" HorizontalAlignment="Right" />
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -94,10 +94,10 @@
             <ItemsControl ItemsSource="{Binding CaptureLimits}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Vertical" Margin="1" ToolTip="{Binding Description}">
+                        <Grid Margin="1" ToolTip="{Binding Description}">
                             <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" HorizontalAlignment="Left" />
-                            <MahApps:NumericUpDown Grid.Column="1" MahApps:TextBoxHelper.Watermark="{Binding Name}" Value="{Binding Value}" Minimum="0" />
-                        </StackPanel>
+                            <MahApps:NumericUpDown Grid.Column="1" MahApps:TextBoxHelper.Watermark="{Binding Name}" Value="{Binding Value}" Minimum="0" TextAlignment="Right" DockPanel.Dock="Right" Width="0" HideUpDownButtons="True" ButtonsAlignment="Right" HorizontalAlignment="Right" />
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

@@ -18,6 +18,9 @@ namespace Profiler.Data
 		public UInt32 SpikeAvgAddMs { get; set; } = 1;
 		public UInt32 ProfilingFramesLimit { get; set; } = 0;
 		public UInt32 ProfileSizeLimitMb { get; set; } = 0;
+		public UInt32 SaveFramesBeforeSpike { get; set; } = 3;
+		public UInt32 SaveFramesAfterSpike { get; set; } = 3;
+		public UInt32 RingBufferSize { get; set; } = 256;
 		public void Write(BinaryWriter writer)
 		{
             writer.Write((UInt32)Mode);
@@ -32,6 +35,10 @@ namespace Profiler.Data
 
 			writer.Write(ProfilingFramesLimit);
 			writer.Write(ProfileSizeLimitMb);
+
+			writer.Write(SaveFramesBeforeSpike);
+			writer.Write(SaveFramesAfterSpike);
+			writer.Write(RingBufferSize);
 		}
 		public void Read(BinaryReader reader)
 		{
@@ -46,6 +53,9 @@ namespace Profiler.Data
 			SpikeAvgAddMs = reader.ReadUInt32();
 			ProfilingFramesLimit = reader.ReadUInt32();
 			ProfileSizeLimitMb = reader.ReadUInt32();
+			SaveFramesBeforeSpike = reader.ReadUInt32();
+			SaveFramesAfterSpike = reader.ReadUInt32();
+			RingBufferSize = reader.ReadUInt32();
 		}
 	}
 }
