@@ -345,7 +345,7 @@ namespace Profiler.Controls
 				if (row.Offset <= e.Y && e.Y <= row.Offset + row.Height)
 				{
 					row.OnMouseClick(new Point(e.X, e.Y - row.Offset), Scroll);
-					if (((EventsThreadRow)row).SelectedId != 0u)
+					if (row is EventsThreadRow && ((EventsThreadRow)row).SelectedId != 0u)
 						hasSelection = true;
 				}
 			}
