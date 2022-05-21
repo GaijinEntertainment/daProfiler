@@ -452,6 +452,7 @@ namespace Profiler.Controls
 		{
 			Scroll.ViewUnit.Left = scrollBar.Value;
 			Scroll.ViewUnit.Normalize();
+			UpdateTimeLine();
 			UpdateSurface();
 		}
 
@@ -498,11 +499,16 @@ namespace Profiler.Controls
 			}
 
 		}
+		private void UpdateTimeLine()
+        {
+			RaiseEvent(new ThreadViewZoomChangedEventArgs(GlobalEvents.ThreadViewZoomChangedEvent, Scroll.ViewTime));
+		}
 		private void UpdateBar()
 		{
 			scrollBar.Value = Scroll.ViewUnit.Left;
 			scrollBar.Maximum = 1.0 - Scroll.ViewUnit.Width;
 			scrollBar.ViewportSize = Scroll.ViewUnit.Width;
+			UpdateTimeLine();
 		}
 
 		const int SelectionBorderCount = 3;

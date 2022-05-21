@@ -6,6 +6,19 @@ using System.Windows;
 
 namespace Profiler.Controls
 {
+	public class ThreadViewZoomChangedEventArgs: RoutedEventArgs
+	{
+		public Durable Time { get; set; }
+
+		public ThreadViewZoomChangedEventArgs(RoutedEvent routedEvent, Durable time)
+			: base(routedEvent)
+		{
+			Time = time;
+		}
+
+		public delegate void Handler(object sender, ThreadViewZoomChangedEventArgs e);
+	}
+
 	public class HighlightFrameEventArgs : RoutedEventArgs
 	{
 		public List<ThreadViewControl.Selection> Items { get; set; }
@@ -34,5 +47,6 @@ namespace Profiler.Controls
 	public class GlobalEvents
 	{
 		public static readonly RoutedEvent FocusFrameEvent = EventManager.RegisterRoutedEvent("FocusFrame", RoutingStrategy.Bubble, typeof(FocusFrameEventArgs.Handler), typeof(GlobalEvents));
+		public static readonly RoutedEvent ThreadViewZoomChangedEvent = EventManager.RegisterRoutedEvent("ThreadViewZoomChanged", RoutingStrategy.Bubble, typeof(ThreadViewZoomChangedEventArgs.Handler), typeof(GlobalEvents));
 	}
 }

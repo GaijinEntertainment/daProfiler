@@ -30,6 +30,8 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using System.Security;
 using Profiler.Controls;
+using Profiler.DirectX;
+using System.Windows.Controls.Primitives;
 
 namespace Profiler
 {
@@ -52,11 +54,473 @@ namespace Profiler
 				return frames;
 			}
 		}
+		private SolidColorBrush _optickBackground;
+		public SolidColorBrush OptickBackground { get { if (_optickBackground == null) _optickBackground = FindResource("OptickContentBackground") as SolidColorBrush; return _optickBackground; } }
+
+		public void TimeLineViewControl()
+		{
+			InitializeComponent();
+			UpdateScrollSize();
+
+			surface.SizeChanged += new SizeChangedEventHandler(On_SizeChanged);
+			surface.OnDraw += OnDraw;
+
+			//CompositionTarget.Rendering += AnimationTick;
+			InitInputEvent();
+		}
+		double scrollLeft = 0;
+		private void UpdateSurface(){surface.Update();}
+		void DrawSelection(DirectX.DirectXCanvas canvas){}
+		void DrawHover(DirectXCanvas canvas){}
+		Mesh HoverFrameMeshForeground, HoverFrameMeshBackground;
+		Mesh ThreadViewTimeLineMesh;
+		Mesh BackgroundMesh { get; set; }
+		Mesh BoardsMesh { get; set; }
+		DynamicMesh ThreadViewTimeLineFrame;
+		private void InitBackgroundMesh()
+		{
+			if (BackgroundMesh != null)
+				BackgroundMesh.Dispose();
+
+			DynamicMesh backgroundBuilder = surface.CreateMesh();
+			backgroundBuilder.Projection = Mesh.ProjectionType.Pixel;
+			backgroundBuilder.AddRect(new Rect(0.0, 0, ScrollSize.Width, ScrollSize.Height), OptickBackground.Color);
+			BackgroundMesh = backgroundBuilder.Freeze(surface.RenderDevice);
+			InitHoverFrameMesh();
+			ThreadViewTimeLineFrame = surface.CreateMesh();
+			ThreadViewTimeLineFrame.Geometry = Mesh.GeometryType.Lines;
+			ThreadViewTimeLineFrame.Projection = Mesh.ProjectionType.Pixel;
+		}
+
+        private void InitFrameMesh(ref Mesh mesh, Color solidColor, Color frameColor)
+		{
+			if (mesh != null)
+				mesh.Dispose();
+			DynamicMesh builder = surface.CreateMesh();
+			builder.Projection = Mesh.ProjectionType.Pixel;
+			builder.AddRect(new Rect(0.0, 0, FrameWidth, ScrollSize.Height), solidColor);
+
+			if (frameColor.A != 0)
+			{
+				builder.AddRect(new Rect(0, 0, FrameWidth, 1), frameColor);
+				builder.AddRect(new Rect(0, ScrollSize.Height - 1, FrameWidth, 1), frameColor);
+				builder.AddRect(new Rect(0, 0, 1, ScrollSize.Height), frameColor);
+				builder.AddRect(new Rect(FrameWidth - 1, 0, 1, ScrollSize.Height), frameColor);
+			}
+			mesh = builder.Freeze(surface.RenderDevice);
+			mesh.UseAlpha = true;
+		}
+		private void InitHoverFrameMesh()
+		{
+			InitFrameMesh(ref HoverFrameMeshBackground, Color.FromArgb(0xff, 0xff, 0xff, 0xff), Color.FromArgb(0xff, 0xff, 0xff, 0xff));
+			InitFrameMesh(ref HoverFrameMeshForeground, Color.FromArgb(32, 0, 0xff, 0), Color.FromArgb(127, 0, 0xff, 0));
+			InitFrameMesh(ref ThreadViewTimeLineMesh, Color.FromArgb(32, 0, 0xff, 0), Color.FromArgb(0, 0, 0, 0));
+		}
+		void OnDraw(DirectX.DirectXCanvas canvas, DirectXCanvas.Layer layer)
+		{
+			if (layer == DirectXCanvas.Layer.Background)
+				canvas.Draw(BackgroundMesh);
+			Render(canvas, layer);
+		}
+		Rect ScrollSize = new Rect();
+		void UpdateScrollSize()
+        {
+			ScrollSize.Width = surface.ActualWidth * RenderSettings.dpiScaleX;
+			ScrollSize.Height = surface.ActualHeight * RenderSettings.dpiScaleY;
+		}
+		void On_SizeChanged(object sender, SizeChangedEventArgs e)
+		{
+			UpdateScrollSize();
+			InitBackgroundMesh();
+		}
+
+		class InputState
+		{
+			public bool IsDrag { get; set; }
+			public bool IsSelect { get; set; }
+			public System.Drawing.Point SelectStartPosition { get; set; }
+			public System.Drawing.Point DragPosition { get; set; }
+			public System.Drawing.Point MousePosition { get; set; }
+
+			public InputState()
+			{
+				//MeasureInterval = new Durable();
+			}
+		}
+
+		InputState Input = new InputState();
+		private void InitInputEvent()
+		{
+			surface.RenderCanvas.MouseWheel += RenderCanvas_MouseWheel;
+			surface.RenderCanvas.MouseDown += RenderCanvas_MouseDown;
+			surface.RenderCanvas.MouseUp += RenderCanvas_MouseUp;
+			surface.RenderCanvas.MouseMove += RenderCanvas_MouseMove;
+			surface.RenderCanvas.MouseLeave += RenderCanvas_MouseLeave;
+
+			scrollBar.Scroll += ScrollBar_Scroll;
+		}
+		private void RenderCanvas_MouseLeave(object sender, EventArgs e)
+		{
+			Mouse.OverrideCursor = null;
+			Input.IsDrag = false;
+			Input.IsSelect = false;
+			HoverFrameAt = -1;//ToolTipPanel?.Reset();//fixme!
+			UpdateSurface();
+		}
+		private void RenderCanvas_MouseMove(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			Input.MousePosition = e.Location;
+			bool updateSurface = false;
+
+			if (Input.IsDrag)
+			{
+				double deltaPixel = e.X - Input.DragPosition.X;
+
+				scrollLeft -= deltaPixel;
+
+				UpdateBar();
+				updateSurface = true;
+
+				Input.DragPosition = e.Location;
+				HoverFrameAt = -1;
+			}
+			else
+			{
+				double clickAt = e.Location.X + (double)scrollLeft;
+				int frameAt = (int)(clickAt / (double)FrameWidthWithSpacing);
+				if (frameAt < 0 || frameAt >= frames.Count)
+				{
+					HoverFrameAt = -1;
+				}
+				else
+				{
+					//select
+					HoverFrameAt = frameAt;
+				}
+				updateSurface = true;
+			}
+
+			if (updateSurface)
+				UpdateSurface();
+		}
+		private void RenderCanvas_MouseUp(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			if (e.Button == System.Windows.Forms.MouseButtons.Right)
+			{
+				Mouse.OverrideCursor = null;
+				Input.IsDrag = false;
+			}
+
+			if (e.Button == System.Windows.Forms.MouseButtons.Left)
+			{
+				if (!(Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
+				{
+					Input.IsSelect = true;
+					Input.SelectStartPosition = e.Location;
+					MouseClickLeft(e);
+				}
+			}
+		}
+		private void RenderCanvas_MouseDown(object sender, System.Windows.Forms.MouseEventArgs e)
+		{
+			if (e.Button == System.Windows.Forms.MouseButtons.Right)//todo: check if inside event timeline zoom
+			{
+				Mouse.OverrideCursor = Cursors.ScrollWE;
+				Input.IsDrag = true;
+				Input.DragPosition = e.Location;
+			}
+			else if (e.Button == System.Windows.Forms.MouseButtons.Left)
+			{
+			}
+		}
+		private void MouseClickLeft(System.Windows.Forms.MouseEventArgs args)
+		{
+			System.Drawing.Point e = new System.Drawing.Point(args.X, args.Y);
+			double clickAt = args.X + (double)scrollLeft;
+			int frameAt = (int)(clickAt / (double)FrameWidthWithSpacing);
+			if (frameAt < 0 || frameAt >= frames.Count)
+            {
+				//deselect?
+			}
+            else
+            {
+				//select
+				SelectFrame(frameAt);
+				FocusOnFrame(frames[frameAt]);
+			}
+		}
+		int FirstFrameInSelectedBoard = 0;
+		private void SelectFrame(int frame)
+        {
+			SelectedFrameAt = frame;
+			
+			for (FirstFrameInSelectedBoard = SelectedFrameAt-1; FirstFrameInSelectedBoard >= 0 && frames[frame].Group == frames[FirstFrameInSelectedBoard].Group; --FirstFrameInSelectedBoard)
+			{
+
+			}
+			FirstFrameInSelectedBoard++;
+		}
+
+
+		private void RenderCanvas_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e){}//todo zoom
+		private void UpdateBar()
+		{
+			double w = Math.Max(FullWidth, ScrollSize.Width);
+			double normalSize = ScrollSize.Width / w;
+			scrollBar.Maximum = 1.0 - normalSize;
+			scrollBar.ViewportSize = normalSize;
+			scrollLeft = Math.Max(Math.Min(scrollLeft, FullWidth - ScrollSize.Width * 0.8), 0);
+			scrollBar.Value = scrollLeft / w;
+		}
+		private void GetScrollBar()
+        {
+			double w = Math.Max(FullWidth, ScrollSize.Width);
+			scrollLeft = scrollBar.Value * w;
+			UpdateSurface();
+		}
+		private void ScrollBar_Scroll(object sender, ScrollEventArgs e)
+		{
+			GetScrollBar();
+		}
+
+		
+		List<Mesh> FrameRects { get; set; }
+		//public FrameGroup Group { get; set; }
+
+		//public void AddGroup(FrameGroup group)
+		//{
+		//	Group = group;//todo: add
+		//}
+
+		const int FramesQuant = 32;
+		public static double FrameWidth = 16, FrameSpace = 2, FrameWidthWithSpacing = FrameWidth + FrameSpace * 2;
+		public double FullWidth { get {return FrameWidthWithSpacing * frames.Count; } }
+
+		static Color Epic = Color.FromArgb(0xff, 0xb0, 0x80, 0xff), Good = Color.FromArgb(0xff, 0, 0xff, 0), Okay = Color.FromArgb(0xff, 0xff, 0xa5, 0), Poor = Color.FromArgb(0xff, 0xff, 0, 0);
+		private void ClearMesh()
+        {
+			if (FrameRects != null)
+			{
+				foreach (Mesh mesh in FrameRects)
+					mesh.Dispose();
+			}
+			FrameRects = null;
+			if (BoardsMesh != null)
+				BoardsMesh.Dispose();
+			BoardsMesh = null;
+
+		}
+		public void BuildMesh(DirectX.DirectXCanvas canvas)
+		{
+			int framePacks = frames.Count / FramesQuant;
+			List<DynamicMesh> builder = new List<DynamicMesh>(framePacks);
+			DynamicMesh backBuilder = surface.CreateMesh();
+			backBuilder.Projection = Mesh.ProjectionType.Pixel;
+			Color barColor = Colors.Gray, alternateBarColor = Colors.DarkGray;
+			Color badColor = Colors.DarkRed, alternateBadColor = Color.FromArgb(255, (byte)(badColor.R * 0.8), (byte)(badColor.G * 0.8), (byte)(badColor.B * 0.8));
+			Color boardColor = OptickBackground.Color, alternateBoardColor = Color.FromArgb(255, (byte)(boardColor.R + 20), (byte)(boardColor.G + 20), (byte)(boardColor.B + 20));
+			EventDescriptionBoard currentBoard = null;
+			float maxWidth = (float)FullWidth;
+			double currentRectLeft = FrameSpace; int framesCount = 0, firstGroupIndex = 0;
+			bool alternateBoard = false;
+			foreach (EventFrame frame in frames)
+			{
+				// Build Mesh
+				int fPack = framesCount / FramesQuant;
+				if (builder.Count <= fPack)
+				{
+					DynamicMesh b = surface.CreateMesh();
+					b.Projection = Mesh.ProjectionType.Pixel;
+					builder.Add(b);
+				}
+				if (frame.DescriptionBoard != currentBoard)
+				{
+					if (framesCount != 0)
+					{
+						builder[fPack].AddRect(new Rect(currentRectLeft - FrameSpace - 0.5, 0, 1, 100000), Colors.DarkOrange);
+						backBuilder.AddRect(new Rect(firstGroupIndex * FrameWidthWithSpacing + FrameSpace*0.5, 0,
+														(framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace, 100000),
+							alternateBoard ? boardColor : alternateBoardColor);
+						alternateBoard = !alternateBoard;
+					}
+					//alternateBoardColor = Color.FromArgb(255, (byte)(boardColor.R * 0.8), (byte)(boardColor.G * 0.8), (byte)(boardColor.B * 0.8));
+					currentBoard = frame.DescriptionBoard;
+					firstGroupIndex = framesCount;
+				}
+				double frameTime = frame.Duration;
+				Color color = frameTime > MaxPresentableFrameDuration ? ((framesCount & 1) == 0 ? badColor : alternateBadColor) :
+					((framesCount & 1) == 0 ? barColor : alternateBarColor);
+
+				builder[fPack].AddRect(new Rect(currentRectLeft, 0, FrameWidth, frameTime), color);
+				currentRectLeft += FrameWidthWithSpacing;
+				++framesCount;
+			}
+			if (framesCount != 0)
+			{
+				backBuilder.AddRect(new Rect(firstGroupIndex * FrameWidthWithSpacing + FrameSpace * 0.5, 0,
+												(framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace, 100000),
+					alternateBoard ? boardColor : alternateBoardColor);
+				alternateBoard = !alternateBoard;
+			}
+			FrameRects = new List<Mesh>(framesCount / FramesQuant);
+			if (BoardsMesh != null)
+				BoardsMesh.Dispose();
+			BoardsMesh = backBuilder.Freeze(canvas.RenderDevice);
+			foreach (DynamicMesh mesh in builder)
+				FrameRects.Add(mesh.Freeze(canvas.RenderDevice));
+		}
+
+		public Matrix GetWorldMatrix(double left, double maxDuration)
+		{
+			return new Matrix(1.0, 0.0, 0.0, -ScrollSize.Height / maxDuration,//-1./maxDuration
+							  -left,
+							  ScrollSize.Height);//height
+		}
+		public Matrix GetOffsetMatrix(double left, double scale = 1)
+		{
+			return new Matrix(1.0, 0.0, 0.0, -scale,//-1./maxDuration
+							  -left, ScrollSize.Height);//height
+		}
+		public double MaxPresentableFrameDuration { get {return Math.Max(0.0001, MedianFrameDuration + StdFrameDuration * 3.0); } }
+		int HoverFrameAt = -1, SelectedFrameAt = -1;
+		public void Render(DirectX.DirectXCanvas canvas, DirectXCanvas.Layer layer)
+		{
+			//scrollBar.Scroll += ScrollBar_Scroll;
+			//surface.ActualWidth * RenderSettings.dpiScaleX
+			//surface.ActualHeight * RenderSettings.dpiScaleY
+			double maxDisplayableFrame = MaxPresentableFrameDuration;
+			Matrix world = GetWorldMatrix(scrollLeft, maxDisplayableFrame);
+			double fpsMul = MedianFrameDuration + StdFrameDuration < 8.3333 ? 0.25 : MedianFrameDuration + StdFrameDuration < 16.6667 ? 0.5 : 1.0;//We are targeting either 240, 120fps or 60fps
+			if (layer == DirectXCanvas.Layer.Background)
+			{
+
+				int firstFrame = Math.Max(0, (int)(scrollLeft / FrameWidthWithSpacing));
+				int lastFrame = Math.Min(frames.Count-1, firstFrame + 1 + ((int)(surface.ActualWidth / FrameWidthWithSpacing)));
+				if (BoardsMesh != null)
+				{
+					BoardsMesh.WorldTransform = world;
+					canvas.Draw(BoardsMesh);
+				}
+
+				if (FrameRects != null)
+				{
+					int firstFramePack = firstFrame / FramesQuant, endFramePack = Math.Min(FrameRects.Count, (lastFrame + FramesQuant) / FramesQuant);
+					for (int frame = firstFramePack; frame < endFramePack; ++frame)
+                    {
+						Mesh mesh = FrameRects[frame];
+						mesh.WorldTransform = world;
+						canvas.Draw(mesh);
+					}
+				}
+
+				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
+				{
+					HoverFrameMeshBackground.WorldTransform = GetOffsetMatrix(scrollLeft - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace), frames[HoverFrameAt].Duration / maxDisplayableFrame);
+					canvas.Draw(HoverFrameMeshBackground);
+				}
+
+				double currentFrameTextAt = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing / 2 - scrollLeft;
+				for (int frame = firstFrame; frame <= lastFrame; ++frame, currentFrameTextAt += FrameWidthWithSpacing)
+				{
+					double duration = frames[frame].Duration;
+					Color textColor = duration < 16.6*fpsMul ? Epic : duration < 33.3*fpsMul ? Good : duration < 20*fpsMul ? Okay : Poor;
+					String str = Profiler.Data.Utils.ConvertMsToString(duration);
+					Size sz = canvas.Text.Measure(str);
+					double centerAt = currentFrameTextAt - sz.Height / 2;
+					//shadow
+					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point(centerAt+1, canvas.Height - 4-1),
+									 str,
+									 Colors.Black,
+									 TextAlignment.Left);
+					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point(centerAt , canvas.Height - 4),
+									 str,
+									 textColor,
+									 TextAlignment.Left);
+				}
+			}
+			else if (layer == DirectXCanvas.Layer.Foreground)
+            {
+				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
+				{
+					HoverFrameMeshForeground.WorldTransform = GetOffsetMatrix(scrollLeft - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace));
+					canvas.Draw(HoverFrameMeshForeground);
+				}
+				if (SelectedFrameAt >= 0 && SelectedFrameAt < frames.Count && ThreadViewTime != null && ThreadViewTime.IsValid)
+                {
+					int firstFrame = -1, lastFrame = -1;
+					FrameGroup group = frames[SelectedFrameAt].Group;
+					for (int frame = FirstFrameInSelectedBoard; frame < frames.Count && group == frames[frame].Group; ++frame)
+                    {
+						if (!(frames[frame] is EventFrame))
+							break;
+						if (((EventFrame)frames[frame]).Entries.Count == 0)
+							break;
+						if (((EventFrame)frames[frame]).Entries[0].Start > ThreadViewTime.Start)
+							break;
+						firstFrame = frame;
+					}
+					for (int frame = firstFrame; frame >= 0 && frame < frames.Count && group == frames[frame].Group; ++frame)
+					{
+						if (!(frames[frame] is EventFrame))
+							break;
+						if (((EventFrame)frames[frame]).Entries.Count == 0)
+							break;
+						if (((EventFrame)frames[frame]).Entries[0].Start < ThreadViewTime.Finish)
+							lastFrame = frame;
+						if (((EventFrame)frames[frame]).Entries[0].Finish > ThreadViewTime.Finish)
+							break;
+					}
+					if (firstFrame <= lastFrame && firstFrame >= 0)
+					{
+						Entry firstEntry = ((EventFrame)frames[firstFrame]).Entries[0], lastEntry = ((EventFrame)frames[lastFrame]).Entries[0];
+						double offsetFirst = ((double)ThreadViewTime.Start- firstEntry.Start) / (firstEntry.Finish - firstEntry.Start);
+						double offsetLast = ((double)ThreadViewTime.Finish - lastEntry.Start) / (lastEntry.Finish - lastEntry.Start);
+						double start = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetFirst;
+						double end = lastFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetLast;
+						double sz = end - start;
+						ThreadViewTimeLineMesh.WorldTransform =
+							new Matrix(sz / FrameWidth, 0.0,
+									   0.0, -1.0,
+									   -scrollLeft + start, ScrollSize.Height);//height
+						canvas.Draw(ThreadViewTimeLineMesh);
+
+						//draw two vertical lines
+						start -= scrollLeft;
+						end -= scrollLeft;
+						ThreadViewTimeLineFrame.AddLine(new Point(start-0.5, 0.0), new Point(start-0.5, ScrollSize.Height), Colors.LightGreen);
+						ThreadViewTimeLineFrame.AddLine(new Point(start, 0.0), new Point(start, ScrollSize.Height), Colors.LightGreen);
+						ThreadViewTimeLineFrame.AddLine(new Point(end, 0.0), new Point(end, ScrollSize.Height), Colors.LightGreen);
+						ThreadViewTimeLineFrame.AddLine(new Point(end+0.5, 0.0), new Point(end+0.5, ScrollSize.Height), Colors.LightGreen);
+
+						ThreadViewTimeLineFrame.Update(canvas.RenderDevice);
+						canvas.Draw(ThreadViewTimeLineFrame);
+					}
+					else
+					{
+
+						Durable SelectedTimeSlice = frames[SelectedFrameAt].Group.Board.TimeSlice;
+						double selectedTimeSliceDuration = SelectedTimeSlice.Finish - SelectedTimeSlice.Start;
+						double relativeThreadViewStart = (ThreadViewTime.Start - SelectedTimeSlice.Start) / selectedTimeSliceDuration;
+						double relativeThreadViewSize = (ThreadViewTime.Finish - ThreadViewTime.Start) / selectedTimeSliceDuration;
+						//fixme we need take into account slected time slice firstFrame, and selected TimeSlice total with (in frames)
+						ThreadViewTimeLineMesh.WorldTransform =
+							new Matrix(relativeThreadViewSize * FullWidth / FrameWidth, 0.0,
+									   0.0, -1.0,
+									   -scrollLeft + relativeThreadViewStart * FullWidth, ScrollSize.Height);//height
+
+						canvas.Draw(ThreadViewTimeLineMesh);
+					}
+
+				}
+			}
+		}
+//==================================================================================================================================
 
 		public TimeLine()
 		{
-			this.InitializeComponent();
+			//this.InitializeComponent();
 			this.DataContext = frames;
+		    TimeLineViewControl();
 
 			statusToError.Add(TracerStatus.TRACER_ERROR_ACCESS_DENIED, new KeyValuePair<string, string>("ETW can't start: launch your Game/VisualStudio/UE4Editor as administrator to collect context switches", "https://github.com/bombomby/optick/wiki/Event-Tracing-for-Windows"));
 			statusToError.Add(TracerStatus.TRACER_ERROR_ALREADY_EXISTS, new KeyValuePair<string, string>("ETW session already started (Reboot should help)", "https://github.com/bombomby/optick/wiki/Event-Tracing-for-Windows"));
@@ -68,6 +532,12 @@ namespace Profiler
 
 			socketThread = new Thread(RecieveMessage);
 			socketThread.Start();
+		}
+		Durable ThreadViewTime;
+		public void SetThreadViewTime(Durable time)
+        {
+			ThreadViewTime = time;
+			UpdateSurface();
 		}
 
 		private void TimeLine_ConnectionChanged(IPAddress address, UInt16 port, ProfilerClient.State state, String message)
@@ -99,14 +569,12 @@ namespace Profiler
 				{
 					if (System.IO.Path.GetExtension(file) == ".trace")
 					{
-						lock (frames)
-							{ frames.Clear(); }						
+						Clear();
 						return OpenTrace<FTraceGroup>(file);
 					}
 					else if (System.IO.Path.GetExtension(file) == ".json")
 					{
-						lock (frames)
-						{ frames.Clear(); }
+						Clear();
 						return OpenTrace<ChromeTracingGroup>(file);
 					}
 					else
@@ -143,6 +611,7 @@ namespace Profiler
 
 			frames.UpdateName(name);
 			frames.Flush();
+			BuildMesh(surface);
 			ScrollToEnd();
 
 			return true;
@@ -203,31 +672,33 @@ namespace Profiler
 
 		Dictionary<TracerStatus, KeyValuePair<String, String>> statusToError = new Dictionary<TracerStatus, KeyValuePair<String, String>>();
 
-		public static double frameMsToHeight = 1;
+		public static double AverageFrameDuration = 1, MedianFrameDuration = 1, StdFrameDuration = 0;
 		public static double Square(double a) { return a * a; }
 		int lastFramesCount = 0;
+		public void rebuildMesh()
+        {
+			BuildMesh(surface);
+			UpdateBar();
+			UpdateSurface();
+		}
 		public void RecalcHeight()
         {
-			double height = frameList.ActualHeight;
-			double avg = 0;
+			AverageFrameDuration = 0;
 			lastFramesCount = frames.Count;
 			foreach (Frame frame in frames)
-				avg += frame.Duration;
+				AverageFrameDuration += frame.Duration;
 
 			if (frames.Count > 0)
-				avg /= frames.Count;
+				AverageFrameDuration /= frames.Count;
+			MedianFrameDuration = AverageFrameDuration;//fixme: incorrect!
+			StdFrameDuration = 0;
 			if (frames.Count > 1)
 			{
 				double var = 0;
 				foreach (Frame frame in frames)
-					var += Square(frame.Duration - avg);
+					var += Square(frame.Duration - AverageFrameDuration);
 				var /= frames.Count - 1;
-				double std = Math.Sqrt(var);
-				double maxStd = Math.Min(1000 / 10, avg + 3 * std);//10 fps
-				frameMsToHeight = 66 / maxStd;
-				foreach (Frame frame in frames)
-					if (frame is EventFrame)
-						((EventFrame)frame).OnPropertyChanged("Duration");
+				StdFrameDuration = Math.Sqrt(var);
 			}
 		}
 		public void StopCaptureNow()
@@ -260,8 +731,7 @@ namespace Profiler
 				switch (response.ResponseType)
 				{
 					case DataResponse.Type.ReportProgress:
-						Int32 length = response.Reader.ReadInt32();
-						StatusText.Text = new String(response.Reader.ReadChars(length));
+						StatusText.Text = Data.Utils.ReadVlqString(response.Reader);
 						break;
 
 					case DataResponse.Type.SettingsPack:
@@ -288,21 +758,21 @@ namespace Profiler
 							Port = response.Source.Port
 						};
 						Platform.Type target = Platform.Type.unknown;
-						String targetName = Utils.ReadBinaryString(response.Reader);
+						String targetName = Data.Utils.ReadBinaryString(response.Reader);
 						Enum.TryParse(targetName, true, out target);
 						connection.Target = target;
-						connection.Name = Utils.ReadBinaryString(response.Reader);
+						connection.Name = Data.Utils.ReadBinaryString(response.Reader);
 						RaiseEvent(new NewConnectionEventArgs(connection));
 
 						break;
 					case DataResponse.Type.UniqueName:
-						String uniqueName = Utils.ReadVlqString(response.Reader);
+						String uniqueName = Data.Utils.ReadVlqString(response.Reader);
 						lock (frames)
 						{
 							if (frames.uniqueRunName != uniqueName)
 							{
 								frames.uniqueRunName = uniqueName;
-								frames.Clear();
+								ClearFrames();
 							}
 						}
 						break;
@@ -330,8 +800,9 @@ namespace Profiler
 			if (frames.Count > 0)
 			{
 				RecalcHeight();
-				frameList.SelectedItem = frames[frames.Count - 1];
-				frameList.ScrollIntoView(frames[frames.Count - 1]);
+				rebuildMesh();
+				scrollBar.Value = scrollBar.Maximum;
+				GetScrollBar();
 			}
 		}
 
@@ -355,14 +826,22 @@ namespace Profiler
 					Thread.Sleep(1000);
 				if (currentProcessed == processedResponses && lastProcessedResponses != processedResponses)
 				{
-					lock (frames)
-					{
-						if (frames.Count != lastFramesCount)
-							RecalcHeight();
-					}
+					Application.Current.Dispatcher.BeginInvoke(new Action(() => UpdateCanvas()));
 				}
 			}
 		}
+		private void UpdateCanvas()
+		{
+			lock (frames)
+			{
+				if (frames.Count != lastFramesCount)
+				{
+					RecalcHeight();
+					rebuildMesh();
+				}
+			}
+		}
+
 
 		#region FocusFrame
 		private void FocusOnFrame(Data.Frame frame)
@@ -465,13 +944,6 @@ namespace Profiler
 		}
 		#endregion
 
-		private void frameList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-			if (frameList.SelectedItem is Data.Frame)
-			{
-				FocusOnFrame((Data.Frame)frameList.SelectedItem);
-			}
-		}
 
 		public void ForEachResponse(Action<FrameGroup, DataResponse> action)
 		{
@@ -537,11 +1009,17 @@ namespace Profiler
 			}
 		}
 
+		private void ClearFrames()
+		{
+			frames.Clear();
+			ClearMesh();
+			SelectedFrameAt = HoverFrameAt = -1;
+		}
 		public void Clear()
 		{
 			lock (frames)
 			{
-				frames.Clear();
+				ClearFrames();
 			}
 		}
 
@@ -614,7 +1092,7 @@ namespace Profiler
 	{
 		public static double Convert(double value)
 		{
-			return value * TimeLine.frameMsToHeight;
+			return value;
 		}
 
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)

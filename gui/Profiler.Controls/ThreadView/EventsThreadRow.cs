@@ -156,7 +156,7 @@ namespace Profiler.Controls
 			}
 		}
 
-		const int DIPSplitCount = 20;
+		const int DIPSplitCount = 32;
 
 		public override void BuildMesh(DirectX.DirectXCanvas canvas, ThreadScroll scroll)
 		{

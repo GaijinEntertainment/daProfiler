@@ -357,9 +357,6 @@
     <Compile Include="TimeLine\TimeLine.xaml.cs">
       <DependentUpon>TimeLine.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TimeLine\TimeLineItem.xaml.cs">
-      <DependentUpon>TimeLineItem.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Views\TaskTrackerView.xaml.cs">
       <DependentUpon>TaskTrackerView.xaml</DependentUpon>
     </Compile>
@@ -501,10 +498,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="TimeLine\TimeLine.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TimeLine\TimeLineItem.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

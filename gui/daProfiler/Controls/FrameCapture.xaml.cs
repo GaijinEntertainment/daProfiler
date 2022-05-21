@@ -81,6 +81,7 @@ namespace Profiler.Controls
 
 			this.AddHandler(GlobalEvents.FocusFrameEvent, new FocusFrameEventArgs.Handler(this.OpenFrame));
             this.AddHandler(ThreadViewControl.HighlightFrameEvent, new ThreadViewControl.HighlightFrameEventHandler(this.ThreadView_HighlightEvent));
+            this.AddHandler(GlobalEvents.ThreadViewZoomChangedEvent, new ThreadViewZoomChangedEventArgs.Handler(this.ThreadView_ThreadViewZoomChanged));
 
             ProfilerClient.Get().ConnectionChanged += MainWindow_ConnectionChanged;
 
@@ -214,6 +215,11 @@ namespace Profiler.Controls
         private void ThreadView_HighlightEvent(object sender, HighlightFrameEventArgs e)
         {
 			EventThreadViewControl.Highlight(e.Items);
+        }
+
+        private void ThreadView_ThreadViewZoomChanged(object sender, ThreadViewZoomChangedEventArgs e)
+        {
+			timeLine.SetThreadViewTime(e.Time);
         }
 
 		public void Close()

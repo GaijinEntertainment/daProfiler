@@ -11,6 +11,11 @@ namespace Profiler.DirectX
 {
 	public class TextManager : IDisposable
 	{
+		public enum VerticalDirection
+		{
+			CCW,
+			CW
+		};
 		[StructLayout(LayoutKind.Sequential)]
 		public struct Vertex
 		{
@@ -198,6 +203,102 @@ namespace Profiler.DirectX
 
 		}
 
+		public void DrawVertical(VerticalDirection dir, System.Windows.Point pos, String text, System.Windows.Media.Color color, TextAlignment alignment = TextAlignment.Left, double maxWidth = double.MaxValue)
+		{
+			Color textColor = Utils.Convert(color);
+			pos = new System.Windows.Point((int)pos.X, (int)pos.Y);
+
+			char[] str = text.ToCharArray();
+
+			switch (alignment)
+			{
+				case TextAlignment.Center:
+					{
+						double totalWidth = 0.0;
+						for (int i = 0; i < str.Length; ++i)
+							totalWidth += SegoeUI.Symbols[str[i]].Advance;
+
+						double shift = Math.Max(0.0, (maxWidth - totalWidth) * 0.5);
+
+						Vector2 origin = new Vector2((float)(pos.X), (float)(pos.Y + shift));
+						for (int i = 0; i < str.Length; ++i)
+						{
+							Font.Symbol symbol = SegoeUI.Symbols[str[i]];
+
+							if (symbol.Size.Width > maxWidth)
+								break;
+
+							DrawVertical(dir, origin, symbol, textColor);
+							origin.Y += dir == VerticalDirection.CCW ? +symbol.Advance : -symbol.Advance;
+							maxWidth -= symbol.Advance;
+						}
+					}
+					break;
+
+				case TextAlignment.Right:
+					{
+						Vector2 origin = new Vector2((float)(pos.X), (float)(pos.Y + maxWidth));
+						for (int i = str.Length - 1; i >= 0; --i)
+						{
+							Font.Symbol symbol = SegoeUI.Symbols[str[i]];
+							origin.Y -= dir == VerticalDirection.CCW ? -symbol.Advance : +symbol.Advance;
+
+							if (symbol.Size.Width > maxWidth)
+								break;
+
+							DrawVertical(dir, origin, symbol, textColor);
+							maxWidth -= symbol.Advance;
+						}
+					}
+					break;
+
+				default:
+					{
+						Vector2 origin = new Vector2((float)pos.X, (float)pos.Y);
+						for (int i = 0; i < str.Length; ++i)
+						{
+							Font.Symbol symbol = SegoeUI.Symbols[str[i]];
+
+							if (symbol.Size.Width > maxWidth)
+								break;
+
+							DrawVertical(dir, origin, symbol, textColor);
+							origin.Y -= dir == VerticalDirection.CCW ? +symbol.Advance : -symbol.Advance;
+							maxWidth -= symbol.Advance;
+						}
+					}
+					break;
+			}
+
+		}
+		void DrawVertical(VerticalDirection dir, Vector2 pos, Font.Symbol symbol, Color color)
+		{
+
+			VertexBuffer.Add(new Vertex()
+			{
+				Position = new Vector2(pos.X, pos.Y),
+				UV = dir == VerticalDirection.CCW ? symbol.UV.TopLeft : symbol.UV.BottomRight,
+				Color = color
+			});
+			VertexBuffer.Add(new Vertex()
+			{
+				Position = new Vector2(pos.X + symbol.Size.Height, pos.Y),
+				UV = dir == VerticalDirection.CCW ? symbol.UV.BottomLeft : symbol.UV.TopRight,
+				Color = color
+			});
+			VertexBuffer.Add(new Vertex()
+			{
+				Position = new Vector2(pos.X + symbol.Size.Height, pos.Y - symbol.Size.Width),
+				UV = dir == VerticalDirection.CCW ? symbol.UV.BottomRight : symbol.UV.TopLeft,
+				Color = color
+			});
+			VertexBuffer.Add(new Vertex()
+			{
+				Position = new Vector2(pos.X, pos.Y - symbol.Size.Width),
+				UV = dir == VerticalDirection.CCW ? symbol.UV.TopRight : symbol.UV.BottomLeft,
+				Color = color
+			});
+		}
 		void Draw(Vector2 pos, Font.Symbol symbol, Color color)
 		{
 
