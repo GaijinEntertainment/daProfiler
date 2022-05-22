@@ -90,9 +90,9 @@ namespace Profiler.Controls
 
 			timeLine.NewConnection += TimeLine_NewConnection;
 			timeLine.UpdateSettings += TimeLine_UpdateSettings;
-			timeLine.CancelConnection += TimeLine_CancelConnection;
 			timeLine.StopCapture += TimeLine_StopCapture;
 			timeLine.ShowWarning += TimeLine_ShowWarning;
+			timeLine.UpdateStatus += TimeLine_UpdateStatus;
 			warningBlock.Visibility = Visibility.Collapsed;
 
             AddressBarVM = (AddressBarViewModel)FindResource("AddressBarVM");
@@ -113,20 +113,9 @@ namespace Profiler.Controls
 			EventThreadViewControl.Settings = Settings.LocalSettings.Data.ThreadSettings;
 		}
 
-		private void CancelConnection()
-		{
-			ConnectButton.IsChecked = false;
-			StartButton.IsChecked = false;
-		}
-
 		private void StopCapture()
 		{
 			StartButton.IsChecked = false;
-		}
-
-		private void TimeLine_CancelConnection(object sender, RoutedEventArgs e)
-		{
-			CancelConnection();
 		}
 
 		private void TimeLine_StopCapture(object sender, RoutedEventArgs e)
@@ -152,9 +141,30 @@ namespace Profiler.Controls
 
 		private void MainWindow_ConnectionChanged(IPAddress address, UInt16 port, ProfilerClient.State state, String message)
 		{
-			if (state == ProfilerClient.State.Disconnected)
+			switch (state)
 			{
-				CancelConnection();
+				case ProfilerClient.State.Connecting:
+					StatusText.Text = $"Connecting {(address == null ? "null" : address.ToString())}:{port}...";
+					StatusText.Foreground = new SolidColorBrush(Colors.LightGreen);
+					ShowWarning(String.Empty, String.Empty);
+					break;
+
+				case ProfilerClient.State.Disconnected:
+					ClientStatusText.Visibility = Visibility.Collapsed;
+					StatusText.Text = "Offline";
+					StatusText.Foreground = new SolidColorBrush(String.IsNullOrEmpty(message) ? Colors.Black : Colors.Red);
+					ConnectButton.IsChecked = false;
+					StartButton.IsChecked = false;
+					if (!String.IsNullOrEmpty(message))
+						ShowWarning("Connection stopped! " + message, String.Empty);
+					break;
+
+				case ProfilerClient.State.Connected:
+					StatusText.Text = $"Connected to {address.ToString()}:{port}.";
+					StatusText.Foreground = new SolidColorBrush(Colors.White);
+					ConnectButton.IsChecked = true;
+					ShowWarning(String.Empty, String.Empty);
+                    break;
 			}
 		}
 
@@ -162,6 +172,13 @@ namespace Profiler.Controls
 		{
 			TimeLine.ShowWarningEventArgs args = e as TimeLine.ShowWarningEventArgs;
 			ShowWarning(args.Message, args.URL.ToString());
+		}
+
+		private void TimeLine_UpdateStatus(object sender, RoutedEventArgs e)
+		{
+			TimeLine.UpdateStatusEventArgs args = e as TimeLine.UpdateStatusEventArgs;
+			ClientStatusText.Text = args.Text;
+			ClientStatusText.Visibility = String.IsNullOrEmpty(ClientStatusText.Text) ? Visibility.Collapsed : Visibility.Visible;
 		}
 
 		private void TimeLine_NewConnection(object sender, RoutedEventArgs e)
@@ -294,12 +311,12 @@ namespace Profiler.Controls
 
         private void ClearSamplingButton_Click(object sender, System.Windows.RoutedEventArgs e)
 		{
-			ProfilerClient.Get().SendMessage(new TurnSamplingMessage(false), true);
+			Task.Run(() => ProfilerClient.Get().SendMessage(new TurnSamplingMessage(false), true));
 		}
 
 		private void ConnectButton_Unchecked(object sender, System.Windows.RoutedEventArgs e)
 		{
-			Task.Run(() => ProfilerClient.Get().SendMessage(new DisconnectMessage()));
+			ProfilerClient.Get().Close();
 		}
 
 		private void ConnectButton_Checked(object sender, System.Windows.RoutedEventArgs e)

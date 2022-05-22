@@ -55,16 +55,18 @@
             <Grid>
                 <StackPanel Orientation="Horizontal" Margin="2,2,0,-2" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top">
                     
-                    <ToggleButton x:Name="ConnectButton" IsChecked="{Binding IsConnected, Mode=TwoWay}" Width="{StaticResource DefaultButtonSize}" Height="{StaticResource DefaultButtonSize}" Unchecked="ConnectButton_Unchecked" Checked="ConnectButton_Checked" ToolTip="Connect to game" Padding="-6">
+                    <ToggleButton x:Name="ConnectButton" IsChecked="{Binding IsConnected, Mode=TwoWay}" Width="{StaticResource DefaultButtonSize}" Height="{StaticResource DefaultButtonSize}" Unchecked="ConnectButton_Unchecked" Checked="ConnectButton_Checked" Padding="-6">
                         <ToggleButton.Resources>
                             <Style TargetType="ToggleButton" BasedOn="{StaticResource SquareButtonStyle}">
                                 <Setter Property="BorderThickness" Value="1" />
                                 <Setter Property="BorderBrush" Value="{StaticResource OptickBorder}" />
                                 <Setter Property="MinHeight" Value="16" />
+                                <Setter Property="ToolTip" Value="Connect to game" />
                                 <Style.Triggers>
                                     <Trigger Property="IsChecked" Value="True">
                                         <Setter Property="BorderBrush" Value="{StaticResource AccentBaseColorBrush}" />
                                         <Setter Property="Background" Value="{StaticResource OptickAlternative}" />
+                                        <Setter Property="ToolTip" Value="Disconnect" />
                                         <Setter Property="ContentTemplate">
                                             <Setter.Value>
                                                 <DataTemplate>
@@ -126,6 +128,8 @@
                     <ControlsView:AddressBarView DataContext="{StaticResource AddressBarVM}"
                                     x:Name="PlatformCombo" Margin="4,0,0,0" VerticalAlignment="Center"
                                     Height="{StaticResource DefaultButtonSize}"/>
+                    <TextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Offline" FontSize="10" TextAlignment="Center" Margin="5,4,0,0" FontStyle="Italic" TextDecorations="{x:Null}" TextOptions.TextHintingMode="Animated" FontWeight="SemiBold" Foreground="Black" Visibility="Visible"/>
+                    <TextBlock x:Name="ClientStatusText" TextWrapping="Wrap" Text="Offline" FontSize="14" TextAlignment="Center" Margin="5,0,0,0" FontStyle="Italic" TextDecorations="{x:Null}" TextOptions.TextHintingMode="Animated" FontWeight="SemiBold" Foreground="Yellow" Visibility="Collapsed"/>
                     <StackPanel x:Name="warningBlock"  Orientation="Horizontal">
                         <Image x:Name="warningIcon" Source="/daProfiler;component/TimeLine/Icons/Warning-icon.png" Margin="5,0,0,0" Width="{StaticResource DefaultButtonSize}" Height="{StaticResource DefaultButtonSize}" />
                         <TextBlock VerticalAlignment="Center" TextTrimming="WordEllipsis" Width="Auto"><Hyperlink x:Name="warningUrl" RequestNavigate="Hyperlink_RequestNavigate"><Run x:Name="warningText" Text="ClickMe"/></Hyperlink></TextBlock>

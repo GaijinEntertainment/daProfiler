@@ -545,18 +545,12 @@ namespace Profiler
 			switch (state)
 			{
 				case ProfilerClient.State.Connecting:
-					StatusText.Text = String.Format("Connecting {0}:{1} ...", address == null ? "null" : address.ToString(), port);
-					StatusText.Visibility = System.Windows.Visibility.Visible;
 					break;
 
 				case ProfilerClient.State.Disconnected:
-					RaiseEvent(new ShowWarningEventArgs("Connection Failed! " + message, String.Empty));
-					StatusText.Visibility = System.Windows.Visibility.Collapsed;
 					break;
 
 				case ProfilerClient.State.Connected:
-					StatusText.Text = String.Format("Connected to {0}:{1} ...", address.ToString(), port);
-					StatusText.Visibility = Visibility.Collapsed;
 					break;
 			}
 		}
@@ -565,26 +559,30 @@ namespace Profiler
 		{
 			if (File.Exists(file))
 			{
+				RaiseEvent(new UpdateStatusEventArgs($"Opening {file}"));
+				bool ret = false;
 				using (new WaitCursor())
 				{
 					if (System.IO.Path.GetExtension(file) == ".trace")
 					{
 						Clear();
-						return OpenTrace<FTraceGroup>(file);
+						ret = OpenTrace<FTraceGroup>(file);
 					}
 					else if (System.IO.Path.GetExtension(file) == ".json")
 					{
 						Clear();
-						return OpenTrace<ChromeTracingGroup>(file);
+						ret = OpenTrace<ChromeTracingGroup>(file);
 					}
 					else
 					{
 						using (Stream stream = Data.Capture.Open(file))
 						{
-							return Open(file, stream);
+							ret = Open(file, stream);
 						}
 					}
 				}
+				RaiseEvent(new UpdateStatusEventArgs($"{(ret ? "Opened" : "Can't open")} {System.IO.Path.GetFileName(file)}" ));
+			    return ret;
 			}
 			return false;
 		}
@@ -703,8 +701,8 @@ namespace Profiler
 		}
 		public void StopCaptureNow()
 		{
+			RaiseEvent(new UpdateStatusEventArgs(String.Empty));
 			RaiseEvent(new StopCaptureEventArgs());
-			StatusText.Visibility = System.Windows.Visibility.Collapsed;
 			lock (frames)
 			{
 				frames.Flush();
@@ -712,16 +710,6 @@ namespace Profiler
 			}
 		}
 
-		public void CancelCapture()
-		{
-			RaiseEvent(new CancelConnectionEventArgs());
-			StatusText.Visibility = System.Windows.Visibility.Collapsed;
-			lock (frames)
-			{
-				frames.Flush();
-				ScrollToEnd();
-			}
-		}
 		private bool ApplyResponse(DataResponse response)
 		{
 			if (response.Version >= NetworkProtocol.NETWORK_PROTOCOL_MIN_VERSION)
@@ -731,7 +719,7 @@ namespace Profiler
 				switch (response.ResponseType)
 				{
 					case DataResponse.Type.ReportProgress:
-						StatusText.Text = Data.Utils.ReadVlqString(response.Reader);
+						RaiseEvent(new UpdateStatusEventArgs(Data.Utils.ReadVlqString(response.Reader)));
 						break;
 
 					case DataResponse.Type.SettingsPack:
@@ -862,6 +850,16 @@ namespace Profiler
 			}
 		}
 
+        public class UpdateStatusEventArgs : RoutedEventArgs
+		{
+			public String Text { get; set; }
+
+			public UpdateStatusEventArgs(String text) : base(UpdateStatusEvent)
+			{
+				Text = text;
+			}
+		}
+
 		public class NewConnectionEventArgs : RoutedEventArgs
 		{
 			public Platform.Connection Connection { get; set; }
@@ -882,13 +880,6 @@ namespace Profiler
 			}
 		}
 
-		public class CancelConnectionEventArgs : RoutedEventArgs
-		{
-			public CancelConnectionEventArgs() : base(CancelConnectionEvent)
-			{
-			}
-		}
-
 		public class StopCaptureEventArgs : RoutedEventArgs
 		{
 			public StopCaptureEventArgs() : base(StopCaptureEvent)
@@ -897,15 +888,15 @@ namespace Profiler
 		}
 
 		public delegate void ShowWarningEventHandler(object sender, ShowWarningEventArgs e);
+		public delegate void UpdateStatusEventHandler(object sender, UpdateStatusEventArgs e);
 		public delegate void NewConnectionEventHandler(object sender, NewConnectionEventArgs e);
 		public delegate void UpdateSettingsEventHandler(object sender, UpdateSettingsEventArgs e);
-		public delegate void CancelConnectionEventHandler(object sender, CancelConnectionEventArgs e);
 		public delegate void StopCaptureEventHandler(object sender, StopCaptureEventArgs e);
 
 		public static readonly RoutedEvent ShowWarningEvent = EventManager.RegisterRoutedEvent("ShowWarning", RoutingStrategy.Bubble, typeof(ShowWarningEventArgs), typeof(TimeLine));
+		public static readonly RoutedEvent UpdateStatusEvent = EventManager.RegisterRoutedEvent("UpdateStatus", RoutingStrategy.Bubble, typeof(UpdateStatusEventArgs), typeof(TimeLine));
 		public static readonly RoutedEvent NewConnectionEvent = EventManager.RegisterRoutedEvent("NewConnection", RoutingStrategy.Bubble, typeof(NewConnectionEventHandler), typeof(TimeLine));
 		public static readonly RoutedEvent UpdateSettingsEvent = EventManager.RegisterRoutedEvent("UpdateSettings", RoutingStrategy.Bubble, typeof(UpdateSettingsEventHandler), typeof(TimeLine));
-		public static readonly RoutedEvent CancelConnectionEvent = EventManager.RegisterRoutedEvent("CancelConnection", RoutingStrategy.Bubble, typeof(CancelConnectionEventHandler), typeof(TimeLine));
 		public static readonly RoutedEvent StopCaptureEvent = EventManager.RegisterRoutedEvent("StopCapture", RoutingStrategy.Bubble, typeof(StopCaptureEventHandler), typeof(TimeLine));
 
 		public event RoutedEventHandler FocusFrame
@@ -920,6 +911,12 @@ namespace Profiler
 			remove { RemoveHandler(ShowWarningEvent, value); }
 		}
 
+		public event RoutedEventHandler UpdateStatus
+		{
+			add { AddHandler(UpdateStatusEvent, value); }
+			remove { RemoveHandler(UpdateStatusEvent, value); }
+		}
+
 		public event RoutedEventHandler NewConnection
 		{
 			add { AddHandler(NewConnectionEvent, value); }
@@ -932,11 +929,6 @@ namespace Profiler
 			remove { RemoveHandler(UpdateSettingsEvent, value); }
 		}
 
-		public event RoutedEventHandler CancelConnection
-		{
-			add { AddHandler(CancelConnectionEvent, value); }
-			remove { RemoveHandler(CancelConnectionEvent, value); }
-		}
 		public event StopCaptureEventHandler StopCapture
 		{
 			add { AddHandler(StopCaptureEvent, value); }
@@ -1036,8 +1028,7 @@ namespace Profiler
 
             Application.Current.Dispatcher.BeginInvoke(new Action(() =>
 			{
-				StatusText.Text = "Capturing...";
-				StatusText.Visibility = System.Windows.Visibility.Visible;
+				RaiseEvent(new UpdateStatusEventArgs($"Capturing..."));
 			}));
 
 			Task.Run(() =>
@@ -1068,44 +1059,9 @@ namespace Profiler
             ProfilerClient.Get().IpAddress = address;
             ProfilerClient.Get().Port = port;
 
-            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-			{
-				StatusText.Text = "Connecting...";
-				StatusText.Visibility = System.Windows.Visibility.Visible;
-			}));
-
 			Task.Run(() => { ProfilerClient.Get().SendMessage(new ConnectMessage() , true); });
 		}
-		public void Disconnect()
-		{
-            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-			{
-				StatusText.Text = "Disconnecting...";
-				StatusText.Visibility = System.Windows.Visibility.Visible;
-			}));
-
-			Task.Run(() => { ProfilerClient.Get().SendMessage(new DisconnectMessage(), false); });
-		}
 	}
-
-	public class FrameHeightConverter : IValueConverter
-	{
-		public static double Convert(double value)
-		{
-			return value;
-		}
-
-		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			return Convert((double)value);
-		}
-
-		public object ConvertBack(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
-		{
-			return null;
-		}
-	}
-
 
 	public class WaitCursor : IDisposable
 	{

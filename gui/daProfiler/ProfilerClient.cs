@@ -23,11 +23,12 @@ namespace Profiler
 
 		}
 
-		private void Reconnect()
+		private void Reconnect(bool reuse_socket = true)
 		{
 			if (client.Client.Connected)
-				client.Client.Disconnect(true);
+				client.Client.Disconnect(reuse_socket);
 
+			client.Close();
 			client = new TcpClient();
 		}
 
@@ -60,7 +61,6 @@ namespace Profiler
 		public static ProfilerClient Get() { return profilerClient; }
 
 		TcpClient client = new TcpClient();
-
 		#region SocketWork
 
 		public DataResponse RecieveMessage()
@@ -83,10 +83,14 @@ namespace Profiler
 			{
 				lock (criticalSection)
 				{
-					Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+					if (clientStatus == ClientStatus.Active)//if we asked for disconnect, it is normal to not be able to finish 
 					{
-						ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, ex.Message);
-					}));
+						Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+						{
+							ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, ex.Message);
+						}));
+
+					}
 
 					Reconnect();
 				}
@@ -109,35 +113,31 @@ namespace Profiler
 
 		private bool CheckConnection()
 		{
-			lock (criticalSection)
+			if (!client.Connected)
 			{
-				if (client == null)
-					return false;
-				if (!client.Connected)
+				for (UInt16 currentPort = port; currentPort < port + PORT_RANGE; ++currentPort)
 				{
-					for (UInt16 currentPort = port; currentPort < port + PORT_RANGE; ++currentPort)
+					try
 					{
-						try
+						Application.Current.Dispatcher.BeginInvoke(new Action(() =>
 						{
-							Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-							{
-								ConnectionChanged?.Invoke(IpAddress, currentPort, State.Connecting, String.Empty);
-							}));
+							ConnectionChanged?.Invoke(IpAddress, currentPort, State.Connecting, String.Empty);
+						}));
 
-							client.Connect(new IPEndPoint(ipAddress, currentPort));
-							NetworkStream stream = client.GetStream();
+						client.Connect(new IPEndPoint(ipAddress, currentPort));
+						NetworkStream stream = client.GetStream();
 
-							Application.Current.Dispatcher.BeginInvoke(new Action(() =>
-							{
-								ConnectionChanged?.Invoke(ipAddress, currentPort, State.Connected, String.Empty);
-							}));
-
-							return true;
-						}
-						catch (SocketException ex)
+						Application.Current.Dispatcher.BeginInvoke(new Action(() =>
 						{
-							Debug.Print(ex.Message);
-						}
+							ConnectionChanged?.Invoke(ipAddress, currentPort, State.Connected, String.Empty);
+						}));
+						clientStatus = ClientStatus.Active;
+
+						return true;
+					}
+					catch (SocketException ex)
+					{
+						Debug.Print(ex.Message);
 					}
 				}
 			}
@@ -157,15 +157,13 @@ namespace Profiler
 		{
 			try
 			{
-				if ((client == null || !client.Connected) && !autoconnect)
-					return false;
-
-				CheckConnection();
-				if ((client == null || !client.Connected))
-					return false;
-
 				lock (criticalSection)
 				{
+					if (!client.Connected && !autoconnect)
+						return false;
+					CheckConnection();
+					if (!client.Connected)
+						return false;
 					MemoryStream buffer = new MemoryStream();
 					message.Write(new BinaryWriter(buffer));
 					buffer.Flush();
@@ -188,10 +186,13 @@ namespace Profiler
 			{
 				lock (criticalSection)
 				{
-					Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+					if (clientStatus == ClientStatus.Active)//if we asked for disconnect, it is normal to not be able to finish 
 					{
-						ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, ex.Message);
-					}));
+						Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+						{
+							ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, ex.Message);
+						}));
+					}
 
 					Reconnect();
 				}
@@ -199,16 +200,21 @@ namespace Profiler
 
 			return false;
 		}
-
+		enum ClientStatus { Closing, Closed, Active};
+		ClientStatus clientStatus = ClientStatus.Closed;
 		public void Close()
 		{
 			lock (criticalSection)
 			{
-				if (client != null)
+				clientStatus = ClientStatus.Closing;
+				SendMessage(new DisconnectMessage());
+				Reconnect(false);
+				clientStatus = ClientStatus.Closed;
+				//ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, String.Empty);
+				Application.Current.Dispatcher.BeginInvoke(new Action(() =>
 				{
-					client.Close();
-					client = null;
-				}
+					ConnectionChanged?.Invoke(IpAddress, Port, State.Disconnected, String.Empty);
+				}));
 			}
 		}
 

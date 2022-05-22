@@ -313,6 +313,7 @@ namespace Profiler.Controls
 			Mouse.OverrideCursor = null;
 			Input.IsDrag = false;
 			Input.IsSelect = false;
+			EventsThreadRow.HoverId = 0u;
 			ToolTipPanel?.Reset();
 			UpdateSurface();
 		}

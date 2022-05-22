@@ -26,7 +26,6 @@
             </Setter>
         </Style>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <local:FrameHeightConverter x:Key="FrameHeightConverter"/>
         <LinearGradientBrush x:Key="ButtonNormalBackground" EndPoint="0,1" StartPoint="0,0">
             <GradientStop Color="#F3F3F3" Offset="0"/>
             <GradientStop Color="#EBEBEB" Offset="0.5"/>
@@ -37,24 +36,7 @@
         <ItemsPanelTemplate x:Key="TimeLaneLayoutTemplate">
             <VirtualizingStackPanel IsItemsHost="True" Orientation="Horizontal" VerticalAlignment="Bottom" VirtualizationMode="Recycling" />
         </ItemsPanelTemplate>
-        <Storyboard x:Key="OnLoaded1" RepeatBehavior="Forever">
-            <PointAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Background).(LinearGradientBrush.StartPoint)" Storyboard.TargetName="StatusText">
-                <EasingPointKeyFrame KeyTime="0:0:1" Value="-12,-3"/>
-            </PointAnimationUsingKeyFrames>
-            <PointAnimationUsingKeyFrames Storyboard.TargetProperty="(TextElement.Background).(LinearGradientBrush.EndPoint)" Storyboard.TargetName="StatusText">
-                <EasingPointKeyFrame KeyTime="0:0:1" Value="0,0"/>
-            </PointAnimationUsingKeyFrames>
-        </Storyboard>
     </UserControl.Resources>
-    <UserControl.Triggers>
-        <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-            <BeginStoryboard Storyboard="{StaticResource OnLoaded1}"/>
-        </EventTrigger>
-    </UserControl.Triggers>
-
-    <!--<UserControl.DataContext>
-		<Profiler_Data:FrameCollection/>
-	</UserControl.DataContext>-->
 
     <Grid x:Name="LayoutRoot" VerticalAlignment="Top">
         <Grid.ColumnDefinitions>
@@ -70,15 +52,6 @@
                 <DX:DirectXCanvas x:Name="surface" Height="70" Background="{DynamicResource OptickContentBackground}" VerticalAlignment="Top" />
             </ScrollViewer>
             <ScrollBar Orientation="Horizontal" Width="Auto" x:Name="scrollBar" Grid.Row="1" VerticalAlignment="Bottom" Margin="0,0,16,0" />
-      </Grid>
-
-        <TextBlock x:Name="StatusText" TextWrapping="Wrap" Text="Capturing Frame 34" FontSize="14" TextAlignment="Center" Margin="0,2,0,0" Grid.Row="1" FontStyle="Italic" TextDecorations="{x:Null}" TextOptions.TextHintingMode="Animated" FontWeight="SemiBold" Foreground="Black" Visibility="Collapsed">
-            <TextBlock.Background>
-                <LinearGradientBrush EndPoint="12,3" StartPoint="0,0" MappingMode="Absolute" SpreadMethod="Repeat" Opacity="0.405">
-                    <GradientStop Color="#FFFEAE31" Offset="0.487"/>
-                    <GradientStop Color="#FFFF9800" Offset="0.526"/>
-                </LinearGradientBrush>
-            </TextBlock.Background>
-        </TextBlock>
+        </Grid>
     </Grid>
 </UserControl>
