@@ -97,6 +97,7 @@ namespace Profiler.Controls
 
             AddressBarVM = (AddressBarViewModel)FindResource("AddressBarVM");
             FunctionSummaryVM = (FunctionSummaryViewModel)FindResource("FunctionSummaryVM");
+            FunctionThreadSummaryVM = (FunctionSummaryViewModel)FindResource("FunctionThreadSummaryVM");
 			FunctionInstanceVM = (FunctionInstanceViewModel)FindResource("FunctionInstanceVM");
 			CaptureSettingsVM = (CaptureSettingsViewModel)FindResource("CaptureSettingsVM");
 			CaptureSettingsVM.notifier = this;
@@ -124,6 +125,7 @@ namespace Profiler.Controls
 		}
 
 		FunctionSummaryViewModel FunctionSummaryVM { get; set; }
+		FunctionSummaryViewModel FunctionThreadSummaryVM { get; set; }
 		FunctionInstanceViewModel FunctionInstanceVM { get; set; }
 
 		SamplingViewModel FunctionSamplingVM { get; set; }
@@ -210,6 +212,7 @@ namespace Profiler.Controls
 					EventDescription desc = eventFrame.RootEntry.Description;
 
 					FunctionSummaryVM.Load(group, desc, eventFrame.Header.FrameType);
+					FunctionThreadSummaryVM.Load(group, desc, eventFrame.Header.FrameType, eventFrame.Header.ThreadIndex);
 					FunctionInstanceVM.Load(group, desc, eventFrame.Header.FrameType);
 
 					FunctionSamplingVM.Load(group, desc);
@@ -280,6 +283,7 @@ namespace Profiler.Controls
             SummaryVM.CaptureName = null;
 
 			FunctionSummaryVM.Load(null, null);
+			FunctionThreadSummaryVM.Load(null, null);
 			FunctionInstanceVM.Load(null, null);
 
 			FunctionSamplingVM.Load(null, null);

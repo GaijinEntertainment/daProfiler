@@ -62,7 +62,7 @@ namespace Profiler.ViewModels
 			}));
         }
 
-        public void Load(FrameGroup group, EventDescription desc, FrameList.Type fType = FrameList.Type.None)
+        public void Load(FrameGroup group, EventDescription desc, FrameList.Type fType = FrameList.Type.None, int thread_index = -1)
         {
 			if (Group == group && Description == desc && fType == FrameType)
 				return;
@@ -83,7 +83,7 @@ namespace Profiler.ViewModels
                 if (group != null && desc != null)
                 {
                     frameStats = new FunctionStats(group, desc);
-                    frameStats.Load(Origin, fType);
+                    frameStats.Load(Origin, fType, thread_index);
                 }
 
                 OnLoaded(frameStats);

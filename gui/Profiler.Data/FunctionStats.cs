@@ -152,7 +152,7 @@ namespace Profiler.Data
 			Description = desc;
 		}
 
-		public void Load(Origin origin = Origin.MainThread, FrameList.Type fType = FrameList.Type.None)
+		public void Load(Origin origin = Origin.MainThread, FrameList.Type fType = FrameList.Type.None, int thread_index = -1)
 		{
 			Samples = new List<Sample>();
 
@@ -182,6 +182,8 @@ namespace Profiler.Data
 							foreach (ThreadData thread in Group.Threads)
 							{
 								if ((thread.Description.Mask & (int)ThreadMask.GPU) != (int)(mask & ThreadMask.GPU))
+									continue;
+								if (thread_index >= 0 && thread_index != thread.Description.ThreadIndex)
 									continue;
 								Utils.ForEachInsideInterval(thread.Events, start, finish, (frame) =>
 								{

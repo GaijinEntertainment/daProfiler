@@ -22,6 +22,7 @@
             <ControlsView:SummaryViewer />
         </DataTemplate>
         <ControlsViewModel:FunctionSummaryViewModel x:Key="FunctionSummaryVM" Origin="MainThread" Title="Per Frame Statistics" StrokeOpacity="0.75" StrokeThickness="2" />
+        <ControlsViewModel:FunctionSummaryViewModel x:Key="FunctionThreadSummaryVM" Origin="MainThread" Title="Per Frame/Thread Statistics" StrokeOpacity="0.75" StrokeThickness="2" />
         <ControlsViewModel:FunctionInstanceViewModel x:Key="FunctionInstanceVM" Origin="IndividualCalls" Title="Per Call Statistics" />
         <ControlsViewModel:AddressBarViewModel x:Key="AddressBarVM" />
         <ControlsViewModel:CaptureSettingsViewModel x:Key="CaptureSettingsVM" />
@@ -171,7 +172,7 @@
                         </xcad:LayoutAnchorablePaneGroup>
                         <xcad:LayoutPanel Orientation="Horizontal" DockHeight="1*">
                             <xcad:LayoutAnchorablePaneGroup DockWidth="2*">
-                                <xcad:LayoutAnchorablePane>
+                                <xcad:LayoutAnchorablePane CanRepositionItems="True">
                                     <!--<xcad:LayoutAnchorable ContentId="temp" Title="Temp" CanHide="False" CanClose="False" AutoHideWidth="240">
                                         <Grid x:Name="CaptureSettings" >
                                             <Border BorderThickness="1" BorderBrush="Black" Background="{StaticResource OptickBackground}">
@@ -179,14 +180,23 @@
                                             </Border>
                                         </Grid>
                                     </xcad:LayoutAnchorable>-->
-                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Function Chart (Frame)" CanClose="False">
-                                        <ControlsView:FunctionHistoryChartView x:Name="FunctionHistoryControlNew" DataContext="{StaticResource FunctionSummaryVM}" />
+                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Frame Chart" CanClose="False" ToolTip="Selected Function Framed Chart">
+                                        <ControlsView:FunctionHistoryChartView x:Name="FunctionHistoryFrameChart" DataContext="{StaticResource FunctionSummaryVM}" />
                                     </xcad:LayoutAnchorable>
-                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Function Table (Frame)" CanClose="False">
-                                        <ControlsView:FunctionHistoryTableView x:Name="FunctionHistoryControl" DataContext="{StaticResource FunctionSummaryVM}" />
+                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Frame Table" CanClose="False" ToolTip="Selected Function Framed Chart" >
+                                        <ControlsView:FunctionHistoryTableView x:Name="FunctionHistoryFrameTable" DataContext="{StaticResource FunctionSummaryVM}" />
                                     </xcad:LayoutAnchorable>
-                                    <xcad:LayoutAnchorable ContentId="properties" Title="Properties" CanHide="False" CanClose="False" AutoHideWidth="240">
-                                        <ControlsView:FunctionSummaryView x:Name="FunctionSummaryControl" DataContext="{StaticResource FunctionSummaryVM}" />
+                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Thread Chart" CanClose="False" ToolTip="Selected Function Thread Framed Chart" >
+                                        <ControlsView:FunctionHistoryChartView x:Name="FunctionHistoryFrameThreadChart" DataContext="{StaticResource FunctionThreadSummaryVM}" />
+                                    </xcad:LayoutAnchorable>
+                                    <xcad:LayoutAnchorable ContentId="function_list" Title="Thread Table" CanClose="False" ToolTip="Selected Function Thread Framed Chart" >
+                                        <ControlsView:FunctionHistoryTableView x:Name="FunctionHistoryFrameThreadTable" DataContext="{StaticResource FunctionThreadSummaryVM}" />
+                                    </xcad:LayoutAnchorable>
+                                    <xcad:LayoutAnchorable ContentId="properties" Title="Frame Fun Info" CanHide="True" CanClose="False"  ToolTip="Selected Function Framed Info" AutoHideWidth="300" CanAutoHide="True">
+                                        <ControlsView:FunctionSummaryView x:Name="FunctionFrameSummaryControl" DataContext="{StaticResource FunctionSummaryVM}" />
+                                    </xcad:LayoutAnchorable>
+                                    <xcad:LayoutAnchorable ContentId="properties" Title="Thread Fun Info" CanHide="True" CanClose="False" ToolTip="Selected Function Thread Framed Info" AutoHideWidth="240" CanAutoHide="True">
+                                        <ControlsView:FunctionSummaryView x:Name="FunctionThreadSummaryControl" DataContext="{StaticResource FunctionThreadSummaryVM}" />
                                     </xcad:LayoutAnchorable>
                                 </xcad:LayoutAnchorablePane>
                             </xcad:LayoutAnchorablePaneGroup>
