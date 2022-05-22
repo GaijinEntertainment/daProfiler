@@ -441,6 +441,37 @@ namespace Profiler.Controls
 			return null;
 		}
 
+		public double FindWorstNode(int desiredLevel, uint id, out EventFrame eventFrame, out EventNode eventNode)
+		{
+			double maxDuration = 0;
+			EventFrame rFrame = null;
+			EventNode rNode = null;
+			foreach (EventFrame iframe in EventData.Events)
+			{
+				GetTree(iframe).ForEachChild((node, level) =>
+				{
+					EventNode evNode = (node as EventNode);
+					if ((uint)level > (uint)desiredLevel)
+						return false;
+                    if (evNode.Duration <= maxDuration)
+						return false;
+					if (evNode.Description.Id != id)
+						return true;
+					if (level == desiredLevel || desiredLevel == -1)
+					{
+						rFrame = iframe;
+						rNode = evNode;
+						maxDuration = evNode.Duration;
+						return false;
+					}
+        
+					return true;
+				});
+			}
+			eventFrame = rFrame;
+			eventNode = rNode;
+			return maxDuration;
+		}
 		public int FindNode(Point point, ThreadScroll scroll, out EventFrame eventFrame, out EventNode eventNode)
 		{
 			ITick tick = scroll.PixelToTime(point.X);
@@ -638,7 +669,6 @@ namespace Profiler.Controls
 				}
 			}
 		}
-
 		//static Color FilterFrameColor = Colors.LimeGreen;
 		//static Color FilterEntryColor = Colors.Tomato;
 

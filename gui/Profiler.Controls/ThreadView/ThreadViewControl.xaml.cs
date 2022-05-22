@@ -304,6 +304,8 @@ namespace Profiler.Controls
 			surface.RenderCanvas.MouseUp += RenderCanvas_MouseUp;
 			surface.RenderCanvas.MouseMove += RenderCanvas_MouseMove;
 			surface.RenderCanvas.MouseLeave += RenderCanvas_MouseLeave;
+			surface.RenderCanvas.KeyDown += RenderCanvas_KeyDown;
+
 
 			scrollBar.Scroll += ScrollBar_Scroll;
 		}
@@ -458,6 +460,62 @@ namespace Profiler.Controls
 		}
 
 		const double ZoomSpeed = 1.2 / 120.0;
+
+		private void RenderCanvas_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+		{
+			if (e.KeyCode == System.Windows.Forms.Keys.Enter)
+            {
+				EventsThreadRow selectedRow = GetRow(Input.MousePosition.Y) as EventsThreadRow;
+				if (selectedRow == null)
+					return;
+				EventNode worstNode = null;
+				EventFrame worstFrame = null;
+				EventsThreadRow worstRow = selectedRow;
+				int hoveredLevel = selectedRow.FindNode(new Point(Input.MousePosition.X, Input.MousePosition.Y - selectedRow.Offset), Scroll, out worstFrame, out worstNode);
+				if (worstNode == null)
+					return;
+				int gpuMask = selectedRow.Description.Mask & (int)ThreadMask.GPU;
+				uint descId = (uint)worstNode.Description.Id;
+				if ((e.Modifiers & System.Windows.Forms.Keys.Shift) == System.Windows.Forms.Keys.Shift)
+				{
+					double currentWorst = -1;
+					foreach (ThreadRow row in Rows)
+					{
+						if (row is EventsThreadRow)
+						{
+							EventsThreadRow evRow = (EventsThreadRow)row;
+							if ((evRow.Description.Mask & (int)ThreadMask.GPU) != gpuMask)
+								continue;
+							EventNode node;
+							EventFrame frame;
+							double ret = evRow.FindWorstNode(-1, descId, out frame, out node);
+							if (ret > currentWorst)
+                            {
+								currentWorst = ret;
+								worstRow = evRow;
+								worstFrame = frame;
+								worstNode = node;
+							}
+						}
+					}
+				}
+				else
+                {
+					worstRow.FindWorstNode(-1, descId, out worstFrame, out worstNode);
+				}
+				if (worstFrame != null)
+				{
+					foreach (ThreadRow row in Rows)
+					{
+						if (row is EventsThreadRow)
+							((EventsThreadRow)row).SelectedId = 0u;
+					}
+					worstRow.SelectedId = descId;
+					hasSelection = true;
+					RaiseEvent(new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, new EventFrame(worstFrame, worstNode), null));
+				}
+			}
+		}
 
 		private void RenderCanvas_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e)
 		{

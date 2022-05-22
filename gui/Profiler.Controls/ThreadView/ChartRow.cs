@@ -32,6 +32,7 @@ namespace Profiler.Controls
 			//throw new NotImplementedException();
 		}
 
+
 		List<Tick> Timestamps { get; set; }
 		List<Entry> Entries { get; set; }
 
