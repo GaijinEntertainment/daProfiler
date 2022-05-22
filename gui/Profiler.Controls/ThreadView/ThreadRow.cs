@@ -67,8 +67,10 @@ namespace Profiler.Controls
 		public Durable ViewTime { get { return UnitToTime(ViewUnit); } }
 
 
-		const double MIN_WIDTH = 0.000001;
+		public const double MIN_WIDTH = 0.0000000001;
 		public double Zoom { get { return 1.0 / Math.Max(MIN_WIDTH, ViewUnit.Width); } }
+		public double UnitWidth(double msec) { return msec / Math.Max(1e-14, TimeSlice.Duration); }
+		public double PixelWidth(double msec) { return UnitWidth(msec) * Width * Zoom; }
 
 		public double TimeToUnit(ITick tick)
 		{

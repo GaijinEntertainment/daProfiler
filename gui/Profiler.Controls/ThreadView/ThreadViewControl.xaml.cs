@@ -465,6 +465,11 @@ namespace Profiler.Controls
 			{
 				double delta = e.Delta * ZoomSpeed;
 				double scale = delta > 0.0 ? 1 / delta : -delta;
+				const double minTimeMsec = 0.01;//10usec
+				if (Scroll.ViewUnit.Width * scale < Scroll.UnitWidth(minTimeMsec))//Limit close up to be 10 usec for whole scroll
+					scale = Scroll.UnitWidth(minTimeMsec) / Math.Max(1e-14, Scroll.ViewUnit.Width);
+				if (Scroll.ViewUnit.Width * scale < ThreadScroll.MIN_WIDTH)
+					scale = ThreadScroll.MIN_WIDTH / Math.Max(1e-14, Scroll.ViewUnit.Width);
 
 				double ratio = (double)e.X / surface.RenderCanvas.Width;
 

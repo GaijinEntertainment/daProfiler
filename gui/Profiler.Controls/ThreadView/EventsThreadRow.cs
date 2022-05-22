@@ -60,11 +60,11 @@ namespace Profiler.Controls
 				return true; // (reason == SyncReason.Pthread_InterruptibleSleep) || (reason == SyncReason.Pthread_UninterruptibleSleep);
 			}
 
-            if (reason <= SyncReason.SWT_COUNT)
-            {
-                if (reason == SyncReason.SWT_PREEMPT || reason == SyncReason.SWT_OWEPREEMPT || reason == SyncReason.SWT_NEEDRESCHED)
-                    return false;
-            }
+			if (reason <= SyncReason.SWT_COUNT)
+			{
+				if (reason == SyncReason.SWT_PREEMPT || reason == SyncReason.SWT_OWEPREEMPT || reason == SyncReason.SWT_NEEDRESCHED)
+					return false;
+			}
 
 			return true;
 		}
@@ -124,14 +124,16 @@ namespace Profiler.Controls
 		}
 
 		const float NodeGradientShade = 0.85f;
-		public double DepthToHeight(double level) {return level / MaxDepth;}
+		public double DepthToHeight(double level) { return level / MaxDepth; }
 
-		void BuildMeshNode(DirectX.ComplexDynamicMesh builder, ThreadScroll scroll, EventNode node, int level, Color parentColor)
+		void BuildMeshNode(DirectX.DynamicMesh builder, Durable unitTimeSlice, EventNode node, int level, Color parentColor)
 		{
 			if (level == MaxDepth)
 				return;
 
-			Interval interval = scroll.TimeToUnit(node.Entry);
+			double durationTicks = Math.Max(1, unitTimeSlice.Finish - unitTimeSlice.Start);
+			Interval interval = new Interval((node.Entry.Start - unitTimeSlice.Start) / durationTicks, (node.Entry.Finish - node.Entry.Start) / durationTicks);
+
 
 			double y = DepthToHeight((double)level);
 			double h = DepthToHeight(1.0);
@@ -152,7 +154,7 @@ namespace Profiler.Controls
 
 			foreach (EventNode child in node.Children)
 			{
-				BuildMeshNode(builder, scroll, child, level + 1, nodeColor);
+				BuildMeshNode(builder, unitTimeSlice, child, level + 1, nodeColor);
 			}
 		}
 
@@ -160,7 +162,7 @@ namespace Profiler.Controls
 
 		public override void BuildMesh(DirectX.DirectXCanvas canvas, ThreadScroll scroll)
 		{
-			SetBusy(true);			
+			SetBusy(true);
 			UpdateDepth();
 
 			// Build Mesh
@@ -218,18 +220,11 @@ namespace Profiler.Controls
 					stallReason = sync.Reason;
 				}
 			}
+			int blocksCount = (EventData.Events.Count + FramesPerMesh - 1) / FramesPerMesh;
+			Blocks = new List<Mesh>(blocksCount);
+			for (int meshId = 0; meshId < blocksCount; meshId++)
+				Blocks.Add(null);
 
-			foreach (EventFrame frame in EventData.Events)
-			{
-				Durable interval = Group.Board.TimeSlice;
-				EventTree tree = GetTree(frame);
-				foreach (EventNode node in tree.Children)
-				{
-					BuildMeshNode(builder, scroll, node, 0, Color.FromRgb(0, 0, 0));
-				}
-			}
-
-			Blocks = builder.Freeze(canvas.RenderDevice);
 			SyncMesh = syncBuilder.Freeze(canvas.RenderDevice);
 			SyncWorkMesh = syncWorkBuilder.Freeze(canvas.RenderDevice);
 
@@ -241,6 +236,33 @@ namespace Profiler.Controls
 			CallstackMeshLines.Projection = Mesh.ProjectionType.Pixel;
 
 			SetBusy(false);
+		}
+		private const int FramesPerMesh = 16;
+		private Durable GetBlockTimeSlice(int mesh_id)
+        {
+			mesh_id = Math.Max(0, mesh_id);
+			int frame_begin = mesh_id * FramesPerMesh, frame_end = Math.Min(frame_begin + FramesPerMesh, EventData.Events.Count);
+			if (frame_begin >= frame_end)
+				return null;
+			return new Durable { Start = EventData.Events[frame_begin].Start, Finish = EventData.Events[frame_end - 1].Finish };
+		}
+		private Mesh BuildEventFrame(DirectX.DirectXCanvas canvas, int mesh_id)
+		{
+			mesh_id = Math.Max(0, mesh_id);
+			int frame_begin = mesh_id * FramesPerMesh, frame_end = Math.Min(frame_begin + FramesPerMesh, EventData.Events.Count);
+			if (frame_begin >= frame_end)
+				return null;
+			Durable timeSlice = GetBlockTimeSlice(mesh_id);
+			DirectX.DynamicMesh builder = canvas.CreateMesh();
+			for (int frameId = frame_begin; frameId < frame_end; ++frameId)
+			{
+				EventTree tree = GetTree(EventData.Events[frameId]);
+				foreach (EventNode node in tree.Children)
+				{
+					BuildMeshNode(builder, timeSlice, node, 0, Color.FromRgb(0, 0, 0));
+				}
+			}
+			return builder.Freeze(canvas.RenderDevice);
 		}
 
 		public override double Height { get { return RenderParams.BaseHeight * MaxDepth; } }
@@ -266,6 +288,14 @@ namespace Profiler.Controls
 
 		public uint SelectedId = 0;
 		public static uint HoverId = 0;
+		public Matrix GetBlockMatrix(ThreadScroll scroll, int mesh_id, bool useMargin = true)
+		{
+			Durable meshTimeSlice = GetBlockTimeSlice(mesh_id);
+			Interval interval = scroll.TimeToUnit(meshTimeSlice);
+			return new Matrix(scroll.Zoom*interval.Width, 0.0, 0.0, (Height - (useMargin ? 2.0 * RenderParams.BaseMargin : 0.0)) / scroll.Height,
+							  -((scroll.ViewUnit.Left- interval.Left)* scroll.Zoom),
+							  (Offset + (useMargin ? 1.0 * RenderParams.BaseMargin : 0.0)) / scroll.Height);
+		}
 		public override void Render(DirectX.DirectXCanvas canvas, ThreadScroll scroll, DirectXCanvas.Layer layer, Rect box)
 		{
 			if (!IsVisible)
@@ -275,7 +305,19 @@ namespace Profiler.Controls
 
 			if (layer == DirectXCanvas.Layer.Background)
 			{
-				Draw(canvas, Blocks, world, HoverId == 0u ? SelectedId : HoverId, ((System.DateTime.Now.Ticks / (double)TimeSpan.TicksPerSecond)%0.5)*2);
+				uint animateId = HoverId == 0u ? SelectedId : HoverId;
+				double animationTime = ((System.DateTime.Now.Ticks / (double)TimeSpan.TicksPerSecond) % 0.5) * 2;
+				int firstFrameId = Data.Utils.BinarySearchClosestIndex(EventData.Events, scroll.ViewTime.Start);
+				int lastFrameId = Data.Utils.BinarySearchClosestIndex(EventData.Events, scroll.ViewTime.Finish);
+				int firstMeshId = Math.Max(0, firstFrameId / FramesPerMesh), endMeshId = Math.Min(Blocks.Count, lastFrameId / FramesPerMesh + 1);
+				for (int meshId = firstMeshId; meshId < endMeshId; ++meshId)
+                {
+					if (Blocks[meshId] == null)
+						Blocks[meshId] = BuildEventFrame(canvas, meshId);
+					Mesh mesh = Blocks[meshId];
+					mesh.WorldTransform = GetBlockMatrix(scroll, meshId);
+					canvas.Draw(mesh, new SharpDX.Vector4(animateId, (float)animationTime, 0, 0));
+				}
 
 				if (FilterMesh != null)
 				{
@@ -293,8 +335,9 @@ namespace Profiler.Controls
 					Draw(canvas, SyncWorkMesh, world);
 				}
 
-				Data.Utils.ForEachInsideInterval(EventData.Events, scroll.ViewTime, frame =>
+				for (int frameId = firstFrameId; frameId <= lastFrameId; ++frameId)
 				{
+					EventFrame frame = EventData.Events[frameId];
 					GetTree(frame).ForEachChild((node, level) =>
 					{
 						Entry entry = (node as EventNode).Entry;
@@ -330,7 +373,7 @@ namespace Profiler.Controls
 						}
 						return true;
 					});
-				});
+				}
 			}
 
 			if (layer == DirectXCanvas.Layer.Foreground)
