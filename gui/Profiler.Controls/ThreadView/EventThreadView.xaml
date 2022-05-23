@@ -64,7 +64,7 @@
                         <TextBlock Text="{Binding NumScopes, StringFormat={}{0:### ### ### ##0}}" Margin="2" VerticalAlignment="Center"/>
                     </StackPanel>
                     <Rectangle Width="1" Height="15" Stroke="Gray" Margin="0,0,5,0" />
-                    <StackPanel Orientation="Horizontal" ToolTip="Number of Collected Callstacks (Run the Game as Administrator to enable callstack collection)">
+                    <StackPanel Orientation="Horizontal" ToolTip="Number of Collected Callstacks">
                         <ContentControl Style="{StaticResource appbar_cards_diamond}" Margin="-6" />
                         <TextBlock Text="{Binding NumCallstacks, StringFormat={}{0:### ### ### ##0}}" Margin="2" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -145,9 +145,9 @@
                                 <Label Grid.Column="2" Content="{Binding Duration, Converter={StaticResource MsToStringConverter}, Mode=OneTime}" Margin="2" />
                             </Grid>
                         </DataTemplate>
-                        <DataTemplate DataType="{x:Type Profiler_Data:NodeWaitIntervalList}">
+                        <DataTemplate DataType="{x:Type Profiler_Data:NodeWaitIntervalList}" >
                             <Expander Header="Synchronization" IsExpanded="True" FontWeight="Bold" MahApps:ButtonHelper.PreserveTextCase="True">
-                                <DataGrid ItemsSource="{Binding}"  CanUserAddRows="False" GridLinesVisibility="None" IsReadOnly="True" BorderThickness="0" AutoGenerateColumns="False" FontWeight="Normal" ClipboardCopyMode="ExcludeHeader">
+                                <DataGrid ItemsSource="{Binding}"  CanUserAddRows="False" GridLinesVisibility="None" IsReadOnly="True" BorderThickness="0" AutoGenerateColumns="False" FontWeight="Normal" ClipboardCopyMode="ExcludeHeader" >
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" />
                                         <DataGridTextColumn Header="Time" Binding="{Binding Duration, Converter={StaticResource MsToStringConverter}}" />
@@ -162,16 +162,25 @@
                                 <Expander.Resources>
                                     <CollectionViewSource x:Key="filteredCallstacks" Source="{Binding}"  Filter="CollectionViewSource_Filter"/>
                                 </Expander.Resources>
+                                <Expander.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Copy to clipboard" Click="CopyCallstackClipboard">
+                                            <MenuItem.Icon>
+                                                <ContentControl Style="{StaticResource appbar_page_copy}" Margin="-10" Width="26" Height="26"/>
+                                            </MenuItem.Icon>
+                                        </MenuItem>
+                                    </ContextMenu>
+                                </Expander.ContextMenu>
                                 <DataGrid AutoGenerateColumns="False" ItemsSource="{Binding Source={StaticResource filteredCallstacks}}" CanUserAddRows="False" HeadersVisibility="None" GridLinesVisibility="None" IsReadOnly="True" BorderThickness="0" FontWeight="Normal" ClipboardCopyMode="ExcludeHeader">
                                      <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Address" Binding="{Binding Address, StringFormat={}0x{0:x}}" Foreground="Gray">
+                                        <DataGridTextColumn Header="Address" Binding="{Binding Address, StringFormat={}0x{0:x}}" Foreground="Gray" ClipboardContentBinding="{Binding /Name, Mode=OneWay}">
                                             <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="HorizontalAlignment" Value="Right" />
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" ClipboardContentBinding="{Binding Name}" />
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Expander>

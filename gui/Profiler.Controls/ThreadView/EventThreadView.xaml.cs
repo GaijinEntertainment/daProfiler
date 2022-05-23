@@ -582,6 +582,22 @@ namespace Profiler.Controls
 			ThreadViewControl.Scroll.DrawCallstacks = 0;
 			ThreadViewControl.UpdateSurface();
 		}
+		public void CopyCallstackClipboard(object sender, RoutedEventArgs e)
+        {
+			if (sender is MenuItem && ((MenuItem)sender).DataContext is Callstack)
+            {
+				Callstack callstack =(Callstack) ((MenuItem)sender).DataContext;
+				String stringCallstack = "";
+				for (int i = callstack.Count-1; i >= 0; --i)
+                {
+					SamplingDescription sample = callstack[i];
+					stringCallstack += $"{sample.Address:X}\t{sample.ModuleShortName}\t{sample.FullName}\n";
+					if (sample.Path != FileLine.Empty)
+						stringCallstack += $"\t{sample.Path.File}({sample.Path.Line})\n";
+				}
+				Clipboard.SetText(stringCallstack);
+			}
+		}
 
 		//private void ShowTagsButton_Click(object sender, RoutedEventArgs e)
 		//{
