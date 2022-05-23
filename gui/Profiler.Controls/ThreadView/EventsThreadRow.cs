@@ -286,8 +286,8 @@ namespace Profiler.Controls
 			return frame.Root;
 		}
 
-		public uint SelectedId = 0;
-		public static uint HoverId = 0;
+		public EventNode SelectedNode = null;
+		public static EventNode HoverNode = null;
 		public Matrix GetBlockMatrix(ThreadScroll scroll, int mesh_id, bool useMargin = true)
 		{
 			Durable meshTimeSlice = GetBlockTimeSlice(mesh_id);
@@ -305,7 +305,7 @@ namespace Profiler.Controls
 
 			if (layer == DirectXCanvas.Layer.Background)
 			{
-				uint animateId = HoverId == 0u ? SelectedId : HoverId;
+				int animateId = HoverNode == null ? SelectedNode == null ? 0 : SelectedNode.Description.Id : HoverNode.Description.Id;
 				double animationTime = ((System.DateTime.Now.Ticks / (double)TimeSpan.TicksPerSecond) % 0.5) * 2;
 				int firstFrameId = Data.Utils.BinarySearchClosestIndex(EventData.Events, scroll.ViewTime.Start);
 				int lastFrameId = Data.Utils.BinarySearchClosestIndex(EventData.Events, scroll.ViewTime.Finish);
@@ -462,7 +462,7 @@ namespace Profiler.Controls
 						rFrame = iframe;
 						rNode = evNode;
 						maxDuration = evNode.Duration;
-						return false;
+						return true;
 					}
         
 					return true;
@@ -472,11 +472,59 @@ namespace Profiler.Controls
 			eventNode = rNode;
 			return maxDuration;
 		}
+		
+		public void FindNextNode(long tick, bool earlier, int desiredLevel, uint id, out EventFrame eventFrame, out EventNode eventNode)
+		{
+			eventFrame = null;
+			eventNode = null;
+			int index = Data.Utils.BinarySearchClosestIndex(EventData.Events, tick);
+			if (index < 0)
+				return;
+			int step = earlier ? -1 : 1;
+			int end = step < 0 ? -1 : EventData.Events.Count;
+
+			EventFrame rFrame = null;
+			EventNode rNode = null;
+			for (; index != end && rFrame == null; index += step)
+			{
+				EventFrame iframe = EventData.Events[index];
+				GetTree(iframe).ForEachChild((node, level) =>
+				{
+					EventNode evNode = (node as EventNode);
+					if ((uint)level > (uint)desiredLevel)
+						return false;
+					if (rNode != null && !earlier)
+						return false;
+					long compareNodeTick = evNode.Entry.Start;// earlier ? evNode.Entry.Finish : evNode.Entry.Start;
+					if (earlier == compareNodeTick > tick)
+						return true;
+					if (evNode.Description.Id != id)
+						return true;
+					if (level == desiredLevel || desiredLevel == -1)
+					{
+						if (rNode == null || earlier == rNode.Entry.Start < compareNodeTick)
+						{
+							rFrame = iframe;
+							rNode = evNode;
+						}
+						return false;
+					}
+        
+					return true;
+				});
+			}
+			eventFrame = rFrame;
+			eventNode = rNode;
+		}
+
 		public int FindNode(Point point, ThreadScroll scroll, out EventFrame eventFrame, out EventNode eventNode)
 		{
-			ITick tick = scroll.PixelToTime(point.X);
+			return FindNode(scroll.PixelToTime(point.X).Start, (int)(point.Y / RenderParams.BaseHeight), out eventFrame, out eventNode);
+		}
 
-			int index = Data.Utils.BinarySearchExactIndex(EventData.Events, tick.Start);
+		public int FindNode(long tick, int desiredLevel, out EventFrame eventFrame, out EventNode eventNode)
+		{
+			int index = Data.Utils.BinarySearchExactIndex(EventData.Events, tick);
 
 			EventFrame resultFrame = null;
 			EventNode resultNode = null;
@@ -485,8 +533,6 @@ namespace Profiler.Controls
 			if (index >= 0)
 			{
 				EventFrame frame = EventData.Events[index];
-
-				int desiredLevel = (int)(point.Y / RenderParams.BaseHeight);
 
 				GetTree(frame).ForEachChild((node, level) =>
 				{
@@ -498,7 +544,7 @@ namespace Profiler.Controls
 					if (level == desiredLevel)
 					{
 						EventNode evNode = (node as EventNode);
-						if (evNode.Entry.Intersect(tick.Start))
+						if (evNode.Entry.Intersect(tick))
 						{
 							resultFrame = frame;
 							resultNode = evNode;
@@ -654,7 +700,7 @@ namespace Profiler.Controls
 			EventNode node = null;
 			EventFrame frame = null;
 			int level = FindNode(point, scroll, out frame, out node);
-			SelectedId = 0u;
+			SelectedNode = null;
 			if (EventNodeSelected != null)
 			{
 				ITick tick = scroll.PixelToTime(point.X);
@@ -664,7 +710,7 @@ namespace Profiler.Controls
 				}
 				if (frame != null)
 				{
-					SelectedId = (node == null || node.Description == null) ? 0u : (uint)node.Description.Id;
+					SelectedNode = node;
 					EventNodeSelected(this, frame, node);
 				}
 			}

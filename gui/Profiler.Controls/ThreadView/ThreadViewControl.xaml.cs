@@ -228,24 +228,27 @@ namespace Profiler.Controls
 
         public void Highlight(IEnumerable<Selection> items, bool focus = true)
         {
-            SelectionList = new List<Selection>(items);
+			SelectionList = new List<Selection>(items);
 
-            if (focus)
-            {
-                foreach (Selection s in items)
-                {
-                    Interval interval = Scroll.TimeToUnit(s.Focus != null ? s.Focus : (IDurable)s.Frame);
-                    if (!Scroll.ViewUnit.IsValid || (!Scroll.ViewUnit.Contains(interval) && !interval.Contains(Scroll.ViewUnit)))
-                    {
-                        Scroll.ViewUnit.Width = interval.Width * DefaultFrameZoom;
-                        Scroll.ViewUnit.Left = interval.Left - (Scroll.ViewUnit.Width - interval.Width) * 0.5;
-                        Scroll.ViewUnit.Normalize();
-                        UpdateBar();
-                    }
-                }
-            }
+			if (focus)
+			{
+				foreach (Selection s in items)
+				{
+					Interval interval = Scroll.TimeToUnit(s.Focus != null ? s.Focus : (IDurable)s.Frame);
+					if (!Scroll.ViewUnit.IsValid || (!Scroll.ViewUnit.Contains(interval) && (s.Focus == null || !interval.Contains(Scroll.ViewUnit))))
+					{
+						if (Scroll.ViewUnit.Width < interval.Width * DefaultFrameZoom)
+							Scroll.ViewUnit.Width = interval.Width * DefaultFrameZoom;
+						if (Scroll.ViewUnit.Width > interval.Width * 30)//3% of frame
+							Scroll.ViewUnit.Width = interval.Width * 30;
+						Scroll.ViewUnit.Left = interval.Left - (Scroll.ViewUnit.Width - interval.Width) * 0.5;
+						Scroll.ViewUnit.Normalize();
+						UpdateBar();
+					}
+				}
+			}
 
-            UpdateSurface();
+			UpdateSurface();
         }
 
 		public ThreadViewControl()
@@ -304,6 +307,7 @@ namespace Profiler.Controls
 			surface.RenderCanvas.MouseUp += RenderCanvas_MouseUp;
 			surface.RenderCanvas.MouseMove += RenderCanvas_MouseMove;
 			surface.RenderCanvas.MouseLeave += RenderCanvas_MouseLeave;
+			surface.RenderCanvas.PreviewKeyDown += RenderCanvas_PreviewKeyDown;
 			surface.RenderCanvas.KeyDown += RenderCanvas_KeyDown;
 
 
@@ -315,7 +319,7 @@ namespace Profiler.Controls
 			Mouse.OverrideCursor = null;
 			Input.IsDrag = false;
 			Input.IsSelect = false;
-			EventsThreadRow.HoverId = 0u;
+			EventsThreadRow.HoverNode = null;
 			ToolTipPanel?.Reset();
 			UpdateSurface();
 		}
@@ -344,11 +348,11 @@ namespace Profiler.Controls
 			foreach (ThreadRow row in Rows)
 			{
 			    if (row is EventsThreadRow)
-					((EventsThreadRow)row).SelectedId = 0u;
+					((EventsThreadRow)row).SelectedNode = null;
 				if (row.Offset <= e.Y && e.Y <= row.Offset + row.Height)
 				{
 					row.OnMouseClick(new Point(e.X, e.Y - row.Offset), Scroll);
-					if (row is EventsThreadRow && ((EventsThreadRow)row).SelectedId != 0u)
+					if (row is EventsThreadRow && ((EventsThreadRow)row).SelectedNode != null)
 						hasSelection = true;
 				}
 			}
@@ -460,59 +464,146 @@ namespace Profiler.Controls
 		}
 
 		const double ZoomSpeed = 1.2 / 120.0;
-
-		private void RenderCanvas_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+		private void RenderCanvas_PreviewKeyDown(object sender, System.Windows.Forms.PreviewKeyDownEventArgs e)
 		{
-			if (e.KeyCode == System.Windows.Forms.Keys.Enter)
-            {
-				EventsThreadRow selectedRow = GetRow(Input.MousePosition.Y) as EventsThreadRow;
-				if (selectedRow == null)
-					return;
-				EventNode worstNode = null;
-				EventFrame worstFrame = null;
-				EventsThreadRow worstRow = selectedRow;
-				int hoveredLevel = selectedRow.FindNode(new Point(Input.MousePosition.X, Input.MousePosition.Y - selectedRow.Offset), Scroll, out worstFrame, out worstNode);
-				if (worstNode == null)
-					return;
-				int gpuMask = selectedRow.Description.Mask & (int)ThreadMask.GPU;
-				uint descId = (uint)worstNode.Description.Id;
-				if ((e.Modifiers & System.Windows.Forms.Keys.Shift) == System.Windows.Forms.Keys.Shift)
+			switch (e.KeyCode)
+			{
+				case System.Windows.Forms.Keys.Left:
+				case System.Windows.Forms.Keys.Right:
+				case System.Windows.Forms.Keys.Tab:
+					e.IsInputKey = true;
+					break;
+			}
+		}
+		private void SelectWorst(EventsThreadRow selectedRow, EventNode selectedNode, bool all_threads)
+		{
+			if (selectedRow == null || selectedNode == null)
+				return;
+			EventsThreadRow worstRow = selectedRow;
+			EventNode worstNode = selectedNode;
+			EventFrame worstFrame = null;
+			int gpuMask = selectedRow.Description.Mask & (int)ThreadMask.GPU;
+			uint descId = (uint)worstNode.Description.Id;
+			if (all_threads)
+			{
+				double currentWorst = -1;
+				foreach (ThreadRow row in Rows)
 				{
-					double currentWorst = -1;
-					foreach (ThreadRow row in Rows)
+					if (row is EventsThreadRow)
 					{
-						if (row is EventsThreadRow)
+						EventsThreadRow evRow = (EventsThreadRow)row;
+						if ((evRow.Description.Mask & (int)ThreadMask.GPU) != gpuMask)
+							continue;
+						EventNode node;
+						EventFrame frame;
+						double ret = evRow.FindWorstNode(-1, descId, out frame, out node);
+						if (ret > currentWorst)
 						{
-							EventsThreadRow evRow = (EventsThreadRow)row;
-							if ((evRow.Description.Mask & (int)ThreadMask.GPU) != gpuMask)
-								continue;
-							EventNode node;
-							EventFrame frame;
-							double ret = evRow.FindWorstNode(-1, descId, out frame, out node);
-							if (ret > currentWorst)
-                            {
-								currentWorst = ret;
-								worstRow = evRow;
-								worstFrame = frame;
-								worstNode = node;
-							}
+							currentWorst = ret;
+							worstRow = evRow;
+							worstFrame = frame;
+							worstNode = node;
 						}
 					}
 				}
-				else
-                {
-					worstRow.FindWorstNode(-1, descId, out worstFrame, out worstNode);
-				}
-				if (worstFrame != null)
+			}
+			else
+			{
+				worstRow.FindWorstNode(worstNode.Entry.Depth, descId, out worstFrame, out worstNode);
+			}
+			if (worstFrame != null)
+			{
+				foreach (ThreadRow row in Rows)
 				{
-					foreach (ThreadRow row in Rows)
+					if (row is EventsThreadRow)
+						((EventsThreadRow)row).SelectedNode = null;
+				}
+				worstRow.SelectedNode = worstNode;
+				//worstNode.Entry.Depth
+				hasSelection = true;
+				RaiseEvent(new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, new EventFrame(worstFrame, worstNode), null));
+			}
+		}
+		private bool FindSelectedNode(out EventsThreadRow selectedRow, out EventNode selectedNode)
+        {
+			selectedRow = null;
+			selectedNode = null;
+			foreach (ThreadRow row in Rows)
+			{
+				if (row is EventsThreadRow)
+					if (((EventsThreadRow)row).SelectedNode != null)
 					{
-						if (row is EventsThreadRow)
-							((EventsThreadRow)row).SelectedId = 0u;
+						selectedRow = (EventsThreadRow)row;
+						selectedNode = selectedRow.SelectedNode;
+						return true;
 					}
-					worstRow.SelectedId = descId;
-					hasSelection = true;
-					RaiseEvent(new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, new EventFrame(worstFrame, worstNode), null));
+			}
+			return false;
+		}
+
+		private void RenderCanvas_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
+		{
+		    bool shift = (e.Modifiers & System.Windows.Forms.Keys.Shift) == System.Windows.Forms.Keys.Shift;
+			if (e.KeyCode == System.Windows.Forms.Keys.Tab)
+			{
+				EventsThreadRow selectedRow = GetRow(Input.MousePosition.Y) as EventsThreadRow;
+				EventNode selectedNode = null;
+				if (selectedRow != null)
+				{
+					EventFrame worstFrame = null;
+					selectedRow.FindNode(new Point(Input.MousePosition.X, Input.MousePosition.Y - selectedRow.Offset), Scroll, out worstFrame, out selectedNode);
+					if (selectedNode == null)
+						selectedNode = selectedRow.SelectedNode;
+				}
+				if (selectedNode == null)
+					FindSelectedNode(out selectedRow, out selectedNode);
+				SelectWorst(selectedRow, selectedNode, shift);
+			}
+			else if (e.KeyCode == System.Windows.Forms.Keys.Left || e.KeyCode == System.Windows.Forms.Keys.Right)
+			{
+				EventsThreadRow selectedRow = GetRow(Input.MousePosition.Y) as EventsThreadRow;
+				EventNode selectedNode = selectedRow == null ? null : selectedRow.SelectedNode;
+				if (selectedNode == null)
+					FindSelectedNode(out selectedRow, out selectedNode);
+				if (selectedRow != null && selectedRow.SelectedNode != null)
+				{
+					EventFrame eventFrame = null;
+					EventNode eventNode = null;
+					bool isLeft = e.KeyCode == System.Windows.Forms.Keys.Left;
+					long nextTick = isLeft ? selectedRow.SelectedNode.Entry.Start - 1 : selectedRow.SelectedNode.Entry.Start + 1;
+					if (shift)
+                    {
+						int gpuMask = selectedRow.Description.Mask & (int)ThreadMask.GPU;
+						foreach (ThreadRow row in Rows)
+						{
+							if (row is EventsThreadRow)
+                            {
+								EventsThreadRow evRow = (EventsThreadRow)row;
+								if ((evRow.Description.Mask & (int)ThreadMask.GPU) != gpuMask)
+									continue;
+								EventFrame curFrame = null;
+								EventNode curNode = null;
+								evRow.FindNextNode(nextTick, isLeft, selectedRow.SelectedNode.Entry.Depth, (uint)selectedRow.SelectedNode.Description.Id, out curFrame, out curNode);
+								if (curNode != null)
+								{
+									if (eventNode == null || isLeft == (curNode.Entry.Start > eventNode.Entry.Start))
+									{
+										eventNode = curNode;
+										eventFrame = curFrame;
+									}
+								}
+							}
+						}
+
+					}
+					else
+						selectedRow.FindNextNode(nextTick, isLeft, selectedRow.SelectedNode.Entry.Depth, (uint)selectedRow.SelectedNode.Description.Id, out eventFrame, out eventNode);
+					if (eventNode != null)
+					{
+						selectedRow.SelectedNode = eventNode;
+						hasSelection = true;
+						RaiseEvent(new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, new EventFrame(eventFrame, eventNode), null));
+					}
 				}
 			}
 		}
@@ -548,7 +639,7 @@ namespace Profiler.Controls
 		}
 
 		private bool surfaceInvalided = true, hasSelection = false;
-		private bool HasAnimations {get {return hasSelection || EventsThreadRow.HoverId != 0u;}}
+		private bool HasAnimations {get {return hasSelection || EventsThreadRow.HoverNode != null;}}
 		private bool HasToRedraw {get {return surfaceInvalided || HasAnimations;}}
 		public void UpdateSurface()
 		{
