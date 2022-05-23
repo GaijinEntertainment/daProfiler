@@ -149,6 +149,15 @@
             <Grid.Resources>
                 <SolidColorBrush x:Key="TabBackground">Red</SolidColorBrush>
             </Grid.Resources>
+            <Grid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy to clipboard" Click="CopyFunctionInfo">
+                        <MenuItem.Icon>
+                            <ContentControl Style="{StaticResource appbar_page_copy}" Margin="-10" Width="26" Height="26"/>
+                        </MenuItem.Icon>
+                    </MenuItem>
+                </ContextMenu>
+            </Grid.ContextMenu>
             <xcad:DockingManager AllowMixedOrientation="True" BorderBrush="Black" BorderThickness="1" Margin="0,-120,0,0">
                 <xcad:DockingManager.Theme>
                     <xcad:Vs2013DarkTheme />
@@ -171,7 +180,7 @@
                             </xcad:LayoutAnchorablePane>
                         </xcad:LayoutAnchorablePaneGroup>
                         <xcad:LayoutPanel Orientation="Horizontal" DockHeight="1*">
-                            <xcad:LayoutAnchorablePaneGroup DockWidth="2*">
+                                <xcad:LayoutAnchorablePaneGroup DockWidth="2*">
                                 <xcad:LayoutAnchorablePane CanRepositionItems="True">
                                     <!--<xcad:LayoutAnchorable ContentId="temp" Title="Temp" CanHide="False" CanClose="False" AutoHideWidth="240">
                                         <Grid x:Name="CaptureSettings" >

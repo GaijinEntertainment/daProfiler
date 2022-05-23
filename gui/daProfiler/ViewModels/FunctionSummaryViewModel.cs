@@ -19,7 +19,7 @@ namespace Profiler.ViewModels
     public class FunctionViewModel : BaseViewModel
     {
 		private FrameGroup Group { get; set; }
-		private EventDescription Description { get; set; }
+		public EventDescription Description { get; set; }
 		private FrameList.Type FrameType {get;set;}
 
         private String _title;
