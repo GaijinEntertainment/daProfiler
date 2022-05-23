@@ -292,7 +292,7 @@ namespace Profiler
 		//	Group = group;//todo: add
 		//}
 
-		const int FramesQuant = 32;
+		const int FramesQuant = 16;
 		public static double FrameWidth = 16, FrameSpace = 2, FrameWidthWithSpacing = FrameWidth + FrameSpace * 2;
 		public double FullWidth { get {return FrameWidthWithSpacing * frames.Count; } }
 
