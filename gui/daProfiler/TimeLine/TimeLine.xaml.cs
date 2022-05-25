@@ -390,7 +390,7 @@ namespace Profiler
 			//surface.ActualHeight * RenderSettings.dpiScaleY
 			double maxDisplayableFrame = MaxPresentableFrameDuration;
 			Matrix world = GetWorldMatrix(scrollLeft, maxDisplayableFrame);
-			double fpsMul = MedianFrameDuration + StdFrameDuration < 8.3333 ? 0.25 : MedianFrameDuration + StdFrameDuration < 16.6667 ? 0.5 : 1.0;//We are targeting either 240, 120fps or 60fps
+			double fpsMul = MedianFrameDuration + StdFrameDuration < 8.7 ? 0.25 : MedianFrameDuration + StdFrameDuration < 16.99 ? 0.5 : 1.0;//We are targeting either 240, 120fps or 60fps
 			if (layer == DirectXCanvas.Layer.Background)
 			{
 
