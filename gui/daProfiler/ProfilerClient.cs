@@ -123,23 +123,31 @@ namespace Profiler
 						{
 							ConnectionChanged?.Invoke(IpAddress, currentPort, State.Connecting, String.Empty);
 						}));
-
-						client.Connect(new IPEndPoint(ipAddress, currentPort));
-						NetworkStream stream = client.GetStream();
-
-						Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+						var task = client.ConnectAsync(ipAddress, currentPort);
+						var waited = task.Wait(TimeSpan.FromSeconds(2));
+						if (client.Connected)
 						{
-							ConnectionChanged?.Invoke(ipAddress, currentPort, State.Connected, String.Empty);
-						}));
-						clientStatus = ClientStatus.Active;
-
-						return true;
+							Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+							{
+								ConnectionChanged?.Invoke(ipAddress, currentPort, State.Connected, String.Empty);
+							}));
+							clientStatus = ClientStatus.Active;
+							return true;
+						}
+						else
+						{
+							client = new TcpClient();
+						}
 					}
 					catch (SocketException ex)
 					{
 						Debug.Print(ex.Message);
 					}
 				}
+				Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+				{
+					ConnectionChanged?.Invoke(ipAddress, port, State.Disconnected, "Can't connect");
+				}));
 			}
 			return false;
 		}

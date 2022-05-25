@@ -811,7 +811,10 @@ namespace Profiler
 					}
 				}
 				else
+				{
 					Thread.Sleep(1000);
+					Task.Run(() => ProfilerClient.Get().SendMessage(new HeartbeatMessage(), false));
+				}
 				if (currentProcessed == processedResponses && lastProcessedResponses != processedResponses)
 				{
 					Application.Current.Dispatcher.BeginInvoke(new Action(() => UpdateCanvas()));

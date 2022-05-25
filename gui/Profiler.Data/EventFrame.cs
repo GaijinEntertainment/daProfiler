@@ -174,7 +174,7 @@ namespace Profiler.Data
 		{
 			get
 			{
-				return String.Format("{0:0} ms", Header.Duration);
+				return Utils.ConvertMsToString(Header.Duration);
 			}
 		}
 
@@ -382,7 +382,16 @@ namespace Profiler.Data
 		public double CalculateWork(Durable entry)
 		{
 			if (Synchronization == null || Synchronization.Count == 0)
-				return entry.Duration;
+			{
+				double sleep = 0;
+				for (int i = Utils.BinarySearchClosestIndex(Entries, entry.Start); i <= Data.Utils.BinarySearchClosestIndex(Entries, entry.Finish) && i != -1; ++i)
+                {
+					Entry e = Entries[i];
+					if (e.Description.IsSleep)
+						sleep += e.Overlap(entry);
+                }
+				return entry.Duration - sleep;
+			}
 
 			double result = 0.0;
 			for (int i = Utils.BinarySearchClosestIndex(Synchronization, entry.Start); i <= Data.Utils.BinarySearchClosestIndex(Synchronization, entry.Finish) && i != -1; ++i)

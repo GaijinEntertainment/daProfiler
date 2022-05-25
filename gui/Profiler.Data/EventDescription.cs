@@ -76,7 +76,7 @@ namespace Profiler.Data
 		}
 		public Brush Brush { get; private set; }
 
-		public bool IsSleep { get { return Color == Colors.White; } }
+		public bool IsSleep { get { return (Flags&DescFlags.IS_WAIT) != 0; } }//Color == Colors.White
 
 		public EventDescription() { }
 		public EventDescription(String name, int id = -1)
@@ -88,14 +88,14 @@ namespace Profiler.Data
 		public enum DescFlags : byte
 		{
 			NONE = 0,
-			IS_CUSTOM_NAME = 1 << 0,
+			IS_WAIT = 1 << 0,
 		}
 
 		public DescFlags Flags { get; private set; }
 
 		public ThreadMask? Mask { get; set; }
 
-		public override bool HasShortName { get { return (Flags & DescFlags.IS_CUSTOM_NAME) == 0; } }
+		public override bool HasShortName { get { return true; } }
 
 		public static Color GenerateRandomColor(String name, float variance = 0.0f)
 		{
@@ -431,9 +431,17 @@ namespace Profiler.Data
 			return res;
 		}
 
+		private double work_ = -1;
 		public double CalculateWork()
 		{
-			return Frame == null ? Duration : Frame.CalculateWork(this);
+			if (work_ < 0)
+				work_ = DoCalculateWork();
+			return work_;
+		}
+
+		public double DoCalculateWork()
+		{
+			return Description.IsSleep ? 0 : (Frame == null ? Duration : Frame.CalculateWork(this));
 		}
 
 		public int CompareTo(Entry other)

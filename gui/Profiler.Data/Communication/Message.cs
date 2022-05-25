@@ -163,6 +163,7 @@ namespace Profiler.Data
 		Capture,
 		TurnSampling,
 		CancelProfiling,
+		Heartbeat,
 		COUNT
 	}
 
@@ -182,6 +183,13 @@ namespace Profiler.Data
 		public override Int16 GetMessageType()
 		{
 			return (Int32)MessageType.Connected;
+		}
+	}
+	public class HeartbeatMessage : Message
+	{
+		public override Int16 GetMessageType()
+		{
+			return (Int32)MessageType.Heartbeat;
 		}
 	}
 
