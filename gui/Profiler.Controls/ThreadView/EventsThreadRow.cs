@@ -315,8 +315,11 @@ namespace Profiler.Controls
 					if (Blocks[meshId] == null)
 						Blocks[meshId] = BuildEventFrame(canvas, meshId);
 					Mesh mesh = Blocks[meshId];
-					mesh.WorldTransform = GetBlockMatrix(scroll, meshId);
-					canvas.Draw(mesh, new SharpDX.Vector4(animateId, (float)animationTime, 0, 0));
+					if (mesh != null)
+					{
+						mesh.WorldTransform = GetBlockMatrix(scroll, meshId);
+						canvas.Draw(mesh, new SharpDX.Vector4(animateId, (float)animationTime, 0, 0));
+					}
 				}
 
 				if (FilterMesh != null)
