@@ -559,28 +559,30 @@ namespace Profiler
 		{
 			if (File.Exists(file))
 			{
-				RaiseEvent(new UpdateStatusEventArgs($"Opening {file}"));
 				bool ret = false;
-				using (new WaitCursor())
-				{
-					if (System.IO.Path.GetExtension(file) == ".trace")
+			    try {
+					RaiseEvent(new UpdateStatusEventArgs($"Opening {file}"));
+					using (new WaitCursor())
 					{
-						Clear();
-						ret = OpenTrace<FTraceGroup>(file);
-					}
-					else if (System.IO.Path.GetExtension(file) == ".json")
-					{
-						Clear();
-						ret = OpenTrace<ChromeTracingGroup>(file);
-					}
-					else
-					{
-						using (Stream stream = Data.Capture.Open(file))
+						if (System.IO.Path.GetExtension(file) == ".trace")
 						{
-							ret = Open(file, stream);
+							Clear();
+							ret = OpenTrace<FTraceGroup>(file);
+						}
+						else if (System.IO.Path.GetExtension(file) == ".json")
+						{
+							Clear();
+							ret = OpenTrace<ChromeTracingGroup>(file);
+						}
+						else
+						{
+							using (Stream stream = Data.Capture.Open(file))
+							{
+								ret = Open(file, stream);
+							}
 						}
 					}
-				}
+				} catch (System.IO.IOException) {}
 				RaiseEvent(new UpdateStatusEventArgs($"{(ret ? "Opened" : "Can't open")} {System.IO.Path.GetFileName(file)}" ));
 			    return ret;
 			}
