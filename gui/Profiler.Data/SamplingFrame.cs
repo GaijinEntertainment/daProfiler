@@ -274,7 +274,7 @@ namespace Profiler.Data
 
 		bool IsSimilar(SamplingDescription a, SamplingDescription b)
 		{
-			return a.Name == b.Name; //(a.Address == b.Address || (a.Path.Line == b.Path.Line && a.Name == b.Name);
+			return a.FullName == b.FullName; //(a.Address == b.Address || (a.Path.Line == b.Path.Line && a.Name == b.Name);
 		}
 
 		void AppendMerge(Callstack callstack, int index, SamplingNode root)
@@ -401,7 +401,7 @@ namespace Profiler.Data
 			}
 		}
 
-        public string DeatiledDescription
+        public string DetailedDescription
         {
             get
             {

@@ -56,8 +56,10 @@ namespace Profiler.Data
 				if (HasShortName)
 				{
 					String shortName = StripFunctionArguments(fullName);
-					if (shortName.Length != fullName.Length)
-						name = StripReturnValue(shortName);
+					if (shortName.Length != fullName.Length && shortName.Length > 0)
+						shortName = StripReturnValue(shortName);
+					if ((shortName.Length != fullName.Length && shortName.Length > 0) && !shortName.All(x => !char.IsLetter(x)))
+						name = shortName;
 				}
 			}
 		}

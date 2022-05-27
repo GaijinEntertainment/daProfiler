@@ -201,7 +201,7 @@ namespace Profiler.Data
 		}
 
 
-		public string DeatiledDescription
+		public string DetailedDescription
 		{
 			get
 			{
