@@ -384,17 +384,21 @@ namespace Profiler.Data
 			if (Synchronization == null || Synchronization.Count == 0)
 			{
 				double sleep = 0;
-				for (int i = Utils.BinarySearchClosestIndex(Entries, entry.Start); i <= Data.Utils.BinarySearchClosestIndex(Entries, entry.Finish) && i != -1; ++i)
+				Durable interval = new Durable(entry.Start, entry.Finish);
+				for (int i = Utils.BinarySearchClosestIndex(Entries, interval.Start), end = Data.Utils.BinarySearchClosestIndex(Entries, interval.Finish); i <= end && i != -1; ++i)
                 {
 					Entry e = Entries[i];
 					if (e.Description.IsSleep)
-						sleep += e.Overlap(entry);
+					{
+						sleep += e.Overlap(interval);
+						interval.Start = e.Finish;//already passed time can not be sleeping again, so double sleep not happening.
+					}
                 }
 				return entry.Duration - sleep;
 			}
 
 			double result = 0.0;
-			for (int i = Utils.BinarySearchClosestIndex(Synchronization, entry.Start); i <= Data.Utils.BinarySearchClosestIndex(Synchronization, entry.Finish) && i != -1; ++i)
+			for (int i = Utils.BinarySearchClosestIndex(Synchronization, entry.Start), e = Data.Utils.BinarySearchClosestIndex(Synchronization, entry.Finish); i <= e && i != -1; ++i)
 			{
 				result += Synchronization[i].Overlap(entry);
 			}
