@@ -398,7 +398,7 @@ namespace Profiler.Controls
 					row.OnMouseMove(new Point(e.X, e.Y - row.Offset), Scroll);
 				}
 
-				//updateSurface = true;
+				updateSurface = true;
 			}
 
 			if (updateSurface)
