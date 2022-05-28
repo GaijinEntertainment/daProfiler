@@ -28,6 +28,7 @@ using MahApps.Metro.Controls.Dialogs;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using System.Windows.Input;
 
 namespace Profiler.Views
 {
@@ -50,6 +51,13 @@ namespace Profiler.Views
 
         }
 
+		private void MainWindow_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.Key == Key.F11)
+			{
+				Task.Run(() => {ProfilerClient.Get().SendMessage(new GetCaptureMessage(), false);});
+			}
+		}
 		private void MainWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
 			FrameCaptureControl.Close();

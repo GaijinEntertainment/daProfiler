@@ -138,7 +138,7 @@
                 </StackPanel>
             </Grid>
             <Border Grid.Row="1">
-                <Profiler:TimeLine Margin="2,2,0,99" x:Name="timeLine" Loaded="timeLine_Loaded" />
+               <Profiler:TimeLine Margin="2,2,0,99" x:Name="timeLine" Loaded="timeLine_Loaded" />
             </Border>
             <Border Grid.RowSpan="2"  Grid.Column="1" 
                     DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">

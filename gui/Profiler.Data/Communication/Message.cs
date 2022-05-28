@@ -38,7 +38,7 @@ namespace Profiler.Data
 			CallstackPack,
 			SettingsPack,
 			Heartbeat,
-			Reserved_3,
+			ReportLiveFrameTime,
 			Reserved_4,
 
 			FiberSynchronizationData = 1 << 8,

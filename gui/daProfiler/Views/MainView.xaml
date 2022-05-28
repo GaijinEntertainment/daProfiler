@@ -21,6 +21,7 @@
         WindowTitleBrush="{StaticResource OptickBackground}"
         BorderThickness="1"
         ResizeMode="CanResizeWithGrip"
+        KeyDown="MainWindow_KeyDown"
     >
     <MahApps:MetroWindow.RightWindowCommands>
         <MahApps:WindowCommands>

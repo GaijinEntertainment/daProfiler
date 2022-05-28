@@ -72,11 +72,21 @@ namespace Profiler
 		private void UpdateSurface(){surface.Update();}
 		void DrawSelection(DirectX.DirectXCanvas canvas){}
 		void DrawHover(DirectXCanvas canvas){}
+		DynamicMesh LiveMeshForeground;
 		Mesh HoverFrameMeshForeground, HoverFrameMeshBackground;
 		Mesh ThreadViewTimeLineMesh;
 		Mesh BackgroundMesh { get; set; }
 		Mesh BoardsMesh { get; set; }
 		DynamicMesh ThreadViewTimeLineFrame;
+		private void InitLiveMesh()
+		{
+			if (LiveMeshForeground != null)
+				LiveMeshForeground.Dispose();
+
+			LiveMeshForeground = surface.CreateMesh();
+			LiveMeshForeground.Projection = Mesh.ProjectionType.Pixel;
+			LiveMeshForeground.Geometry = Mesh.GeometryType.Lines;
+		}
 		private void InitBackgroundMesh()
 		{
 			if (BackgroundMesh != null)
@@ -90,6 +100,7 @@ namespace Profiler
 			ThreadViewTimeLineFrame = surface.CreateMesh();
 			ThreadViewTimeLineFrame.Geometry = Mesh.GeometryType.Lines;
 			ThreadViewTimeLineFrame.Projection = Mesh.ProjectionType.Pixel;
+			InitLiveMesh();
 		}
 
         private void InitFrameMesh(ref Mesh mesh, Color solidColor, Color frameColor)
@@ -381,10 +392,56 @@ namespace Profiler
 			return new Matrix(1.0, 0.0, 0.0, -scale,//-1./maxDuration
 							  -left, ScrollSize.Height);//height
 		}
+		private void UpdateLiveMesh(DirectX.DirectXCanvas canvas, List<float> liveFrames)
+		{
+			int framesToDraw = Math.Min(liveFrames.Count, 256);
+			if (framesToDraw > 0)
+			{
+				double width = Math.Min(256, ScrollSize.Width * 0.2), height = ScrollSize.Height * 0.5;
+				int startFrame = Math.Max(0, liveFrames.Count - framesToDraw);
+				double avg = 0, maxDuration, minDuration;
+				maxDuration = minDuration = liveFrames[startFrame];
+				for (int i = startFrame, e = i + framesToDraw; i < e; ++i)
+				{
+					double time = liveFrames[i];
+					avg += time;
+					maxDuration = Math.Max(maxDuration, time);
+					minDuration = Math.Min(minDuration, time);
+				}
+				avg /= framesToDraw;
+				double std = 0;
+				double variance = 0;
+				for (int i = startFrame, e = i + framesToDraw; i < e; ++i)
+					variance += Square(liveFrames[i] - avg);
+				variance /= framesToDraw;
+				std = Math.Sqrt(variance);
+				double scaleDuration = Math.Max(0.0001, avg * 1.5);
+
+				double livePos = ScrollSize.Width * 0.5 - width * 0.5;
+				double at = livePos;
+				for (int i = startFrame, e = i + framesToDraw; i < e; ++i, at += 1)
+				{
+					double time = liveFrames[i];
+					double h = height*liveFrames[i] / scaleDuration;
+					LiveMeshForeground.AddLine(new Point(at, height - h), new Point(at, height), time < scaleDuration ? Colors.LightGreen : Colors.Red);
+				}
+				String info = $"avg:{avg:00.#} min:{minDuration:00.#} max:{maxDuration:00.#} sd:{std:00.##}";
+				canvas.Text.Draw(new Point(livePos, height-14),
+								 info,
+								 Colors.Black,
+								 TextAlignment.Center,
+								 width);
+			}
+			LiveMeshForeground.Update(canvas.RenderDevice);
+			canvas.Draw(LiveMeshForeground);
+		}
+
 		public double MaxPresentableFrameDuration { get {return Math.Max(0.0001, MedianFrameDuration + StdFrameDuration * 3.0); } }
 		int HoverFrameAt = -1, SelectedFrameAt = -1;
+		List<float> currentLiveFrames = new List<float>();
 		public void Render(DirectX.DirectXCanvas canvas, DirectXCanvas.Layer layer)
 		{
+			Random r = new Random();
 			//scrollBar.Scroll += ScrollBar_Scroll;
 			//surface.ActualWidth * RenderSettings.dpiScaleX
 			//surface.ActualHeight * RenderSettings.dpiScaleY
@@ -412,6 +469,7 @@ namespace Profiler
 						canvas.Draw(mesh);
 					}
 				}
+				UpdateLiveMesh(canvas, currentLiveFrames);
 
 				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
 				{
@@ -722,6 +780,18 @@ namespace Profiler
 				{
 					case DataResponse.Type.ReportProgress:
 						RaiseEvent(new UpdateStatusEventArgs(Data.Utils.ReadVlqString(response.Reader)));
+						break;
+					case DataResponse.Type.ReportLiveFrameTime:
+						uint framesToRead = response.Reader.ReadUInt32();
+						lock (currentLiveFrames)
+						{
+							for (uint i = 0; i < framesToRead; ++i)
+								currentLiveFrames.Add(response.Reader.ReadSingle());
+							int maxFramesHistory = 512;
+							if (currentLiveFrames.Count > maxFramesHistory)
+								currentLiveFrames.RemoveRange(0, currentLiveFrames.Count - maxFramesHistory);
+						}
+						Application.Current.Dispatcher.BeginInvoke(new Action(() => UpdateSurface()));
 						break;
 
 					case DataResponse.Type.SettingsPack:
