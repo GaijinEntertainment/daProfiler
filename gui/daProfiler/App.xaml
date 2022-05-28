@@ -15,14 +15,14 @@
                 <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.AnimatedSingleRowTabControl.xaml" />
                 <!-- Accent and AppTheme setting -->
                 <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />-->
-                <ResourceDictionary Source="themes\Steel.xaml" />
+                <ResourceDictionary Source="themes/Steel.xaml" />
                 <!--<ResourceDictionary Source="themes\Blue.xaml" />-->
-                <ResourceDictionary Source="themes\BaseDark.xaml" />
+                <ResourceDictionary Source="themes/BaseDark.xaml" />
                                 
-                <ResourceDictionary Source="themes\Brushes.xaml" />
+                <ResourceDictionary Source="themes/Brushes.xaml" />
                 <ResourceDictionary Source="pack://application:,,,/Profiler.Controls;component/Icons/Icons.xaml" />
                 <!--<ResourceDictionary Source="themes\Window.xaml" />-->
-                <ResourceDictionary Source="themes\Controls.xaml" />
+                <ResourceDictionary Source="themes/Controls.xaml" />
                 <ResourceDictionary>
                     <local:AppBootStrapper x:Key="bootstrapper" />
                 </ResourceDictionary>

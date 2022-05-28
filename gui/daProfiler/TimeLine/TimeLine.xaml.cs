@@ -36,6 +36,10 @@ using System.Windows.Controls.Primitives;
 namespace Profiler
 {
 	public delegate void ClearAllFramesHandler();
+	public interface LiveFramesViewProcessor
+	{
+		void process(BinaryReader reader);
+	}
 
 	/// <summary>
 	/// Interaction logic for TimeLine.xaml
@@ -44,8 +48,7 @@ namespace Profiler
 	{
 		FrameCollection frames = new FrameCollection();
 		Thread socketThread = null;
-
-		Object criticalSection = new Object();
+		public LiveFramesViewProcessor liveFramesView = null;
 
 		public FrameCollection Frames
 		{
@@ -62,9 +65,9 @@ namespace Profiler
 			InitializeComponent();
 			UpdateScrollSize();
 
+			LayoutUpdated += (source, args) => layoutChanged();
 			surface.SizeChanged += new SizeChangedEventHandler(On_SizeChanged);
 			surface.OnDraw += OnDraw;
-
 			//CompositionTarget.Rendering += AnimationTick;
 			InitInputEvent();
 		}
@@ -72,21 +75,11 @@ namespace Profiler
 		private void UpdateSurface(){surface.Update();}
 		void DrawSelection(DirectX.DirectXCanvas canvas){}
 		void DrawHover(DirectXCanvas canvas){}
-		DynamicMesh LiveMeshForeground;
 		Mesh HoverFrameMeshForeground, HoverFrameMeshBackground;
 		Mesh ThreadViewTimeLineMesh;
 		Mesh BackgroundMesh { get; set; }
 		Mesh BoardsMesh { get; set; }
 		DynamicMesh ThreadViewTimeLineFrame;
-		private void InitLiveMesh()
-		{
-			if (LiveMeshForeground != null)
-				LiveMeshForeground.Dispose();
-
-			LiveMeshForeground = surface.CreateMesh();
-			LiveMeshForeground.Projection = Mesh.ProjectionType.Pixel;
-			LiveMeshForeground.Geometry = Mesh.GeometryType.Lines;
-		}
 		private void InitBackgroundMesh()
 		{
 			if (BackgroundMesh != null)
@@ -100,7 +93,6 @@ namespace Profiler
 			ThreadViewTimeLineFrame = surface.CreateMesh();
 			ThreadViewTimeLineFrame.Geometry = Mesh.GeometryType.Lines;
 			ThreadViewTimeLineFrame.Projection = Mesh.ProjectionType.Pixel;
-			InitLiveMesh();
 		}
 
         private void InitFrameMesh(ref Mesh mesh, Color solidColor, Color frameColor)
@@ -134,12 +126,16 @@ namespace Profiler
 			Render(canvas, layer);
 		}
 		Rect ScrollSize = new Rect();
+		void layoutChanged()
+        {
+			surface.Height = Math.Max(0, this.ActualHeight - scrollBar.ActualHeight);// (FullWidth > ScrollSize.Width ? 14 : 0);
+		}
 		void UpdateScrollSize()
         {
 			ScrollSize.Width = surface.ActualWidth * RenderSettings.dpiScaleX;
 			ScrollSize.Height = surface.ActualHeight * RenderSettings.dpiScaleY;
 		}
-		void On_SizeChanged(object sender, SizeChangedEventArgs e)
+		void On_SizeChanged(object sender, EventArgs e)
 		{
 			UpdateScrollSize();
 			InitBackgroundMesh();
@@ -280,6 +276,7 @@ namespace Profiler
 			double normalSize = ScrollSize.Width / w;
 			scrollBar.Maximum = 1.0 - normalSize;
 			scrollBar.ViewportSize = normalSize;
+			ScrollArea.HorizontalScrollBarVisibility = w > ScrollSize.Width ? ScrollBarVisibility.Visible : ScrollBarVisibility.Auto;
 			scrollLeft = Math.Max(Math.Min(scrollLeft, FullWidth - ScrollSize.Width * 0.8), 0);
 			scrollBar.Value = scrollLeft / w;
 		}
@@ -327,7 +324,7 @@ namespace Profiler
 			List<DynamicMesh> builder = new List<DynamicMesh>(framePacks);
 			DynamicMesh backBuilder = surface.CreateMesh();
 			backBuilder.Projection = Mesh.ProjectionType.Pixel;
-			Color barColor = Colors.Gray, alternateBarColor = Colors.DarkGray;
+			Color barColor = Colors.DimGray, alternateBarColor = Colors.Gray;
 			Color badColor = Colors.DarkRed, alternateBadColor = Color.FromArgb(255, (byte)(badColor.R * 0.8), (byte)(badColor.G * 0.8), (byte)(badColor.B * 0.8));
 			Color boardColor = OptickBackground.Color, alternateBoardColor = Color.FromArgb(255, (byte)(boardColor.R + 20), (byte)(boardColor.G + 20), (byte)(boardColor.B + 20));
 			EventDescriptionBoard currentBoard = null;
@@ -348,7 +345,7 @@ namespace Profiler
 				{
 					if (framesCount != 0)
 					{
-						builder[fPack].AddRect(new Rect(currentRectLeft - FrameSpace - 0.5, 0, 1, 100000), Colors.DarkOrange);
+						builder[fPack].AddRect(new Rect(currentRectLeft - FrameSpace*0.5, 0, 1, 100000), Colors.Orange);
 						backBuilder.AddRect(new Rect(firstGroupIndex * FrameWidthWithSpacing + FrameSpace*0.5, 0,
 														(framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace, 100000),
 							alternateBoard ? boardColor : alternateBoardColor);
@@ -392,66 +389,21 @@ namespace Profiler
 			return new Matrix(1.0, 0.0, 0.0, -scale,//-1./maxDuration
 							  -left, ScrollSize.Height);//height
 		}
-		private void UpdateLiveMesh(DirectX.DirectXCanvas canvas, List<float> liveFrames)
-		{
-			int framesToDraw = Math.Min(liveFrames.Count, 256);
-			if (framesToDraw > 0)
-			{
-				double width = Math.Min(256, ScrollSize.Width * 0.2), height = ScrollSize.Height * 0.5;
-				int startFrame = Math.Max(0, liveFrames.Count - framesToDraw);
-				double avg = 0, maxDuration, minDuration;
-				maxDuration = minDuration = liveFrames[startFrame];
-				for (int i = startFrame, e = i + framesToDraw; i < e; ++i)
-				{
-					double time = liveFrames[i];
-					avg += time;
-					maxDuration = Math.Max(maxDuration, time);
-					minDuration = Math.Min(minDuration, time);
-				}
-				avg /= framesToDraw;
-				double std = 0;
-				double variance = 0;
-				for (int i = startFrame, e = i + framesToDraw; i < e; ++i)
-					variance += Square(liveFrames[i] - avg);
-				variance /= framesToDraw;
-				std = Math.Sqrt(variance);
-				double scaleDuration = Math.Max(0.0001, avg * 1.5);
-
-				double livePos = ScrollSize.Width * 0.5 - width * 0.5;
-				double at = livePos;
-				for (int i = startFrame, e = i + framesToDraw; i < e; ++i, at += 1)
-				{
-					double time = liveFrames[i];
-					double h = height*liveFrames[i] / scaleDuration;
-					LiveMeshForeground.AddLine(new Point(at, height - h), new Point(at, height), time < scaleDuration ? Colors.LightGreen : Colors.Red);
-				}
-				String info = $"avg:{avg:00.#} min:{minDuration:00.#} max:{maxDuration:00.#} sd:{std:00.##}";
-				canvas.Text.Draw(new Point(livePos, height-14),
-								 info,
-								 Colors.Black,
-								 TextAlignment.Center,
-								 width);
-			}
-			LiveMeshForeground.Update(canvas.RenderDevice);
-			canvas.Draw(LiveMeshForeground);
-		}
-
 		public double MaxPresentableFrameDuration { get {return Math.Max(0.0001, MedianFrameDuration + StdFrameDuration * 3.0); } }
 		int HoverFrameAt = -1, SelectedFrameAt = -1;
-		List<float> currentLiveFrames = new List<float>();
 		public void Render(DirectX.DirectXCanvas canvas, DirectXCanvas.Layer layer)
 		{
-			Random r = new Random();
 			//scrollBar.Scroll += ScrollBar_Scroll;
 			//surface.ActualWidth * RenderSettings.dpiScaleX
 			//surface.ActualHeight * RenderSettings.dpiScaleY
 			double maxDisplayableFrame = MaxPresentableFrameDuration;
-			Matrix world = GetWorldMatrix(scrollLeft, maxDisplayableFrame);
+			double scrollPos = Math.Floor(scrollLeft);
+			Matrix world = GetWorldMatrix(scrollPos, maxDisplayableFrame);
 			double fpsMul = MedianFrameDuration + StdFrameDuration < 8.7 ? 0.25 : MedianFrameDuration + StdFrameDuration < 16.99 ? 0.5 : 1.0;//We are targeting either 240, 120fps or 60fps
 			if (layer == DirectXCanvas.Layer.Background)
 			{
 
-				int firstFrame = Math.Max(0, (int)(scrollLeft / FrameWidthWithSpacing));
+				int firstFrame = Math.Max(0, (int)(scrollPos / FrameWidthWithSpacing));
 				int lastFrame = Math.Min(frames.Count-1, firstFrame + 1 + ((int)(surface.ActualWidth / FrameWidthWithSpacing)));
 				if (BoardsMesh != null)
 				{
@@ -469,15 +421,14 @@ namespace Profiler
 						canvas.Draw(mesh);
 					}
 				}
-				UpdateLiveMesh(canvas, currentLiveFrames);
 
 				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
 				{
-					HoverFrameMeshBackground.WorldTransform = GetOffsetMatrix(scrollLeft - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace), frames[HoverFrameAt].Duration / maxDisplayableFrame);
+					HoverFrameMeshBackground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace), frames[HoverFrameAt].Duration / maxDisplayableFrame);
 					canvas.Draw(HoverFrameMeshBackground);
 				}
 
-				double currentFrameTextAt = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing / 2 - scrollLeft;
+				double currentFrameTextAt = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing / 2 - scrollPos;
 				for (int frame = firstFrame; frame <= lastFrame; ++frame, currentFrameTextAt += FrameWidthWithSpacing)
 				{
 					double duration = frames[frame].Duration;
@@ -500,7 +451,7 @@ namespace Profiler
             {
 				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
 				{
-					HoverFrameMeshForeground.WorldTransform = GetOffsetMatrix(scrollLeft - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace));
+					HoverFrameMeshForeground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace));
 					canvas.Draw(HoverFrameMeshForeground);
 				}
 				if (SelectedFrameAt >= 0 && SelectedFrameAt < frames.Count && ThreadViewTime != null && ThreadViewTime.IsValid)
@@ -539,12 +490,12 @@ namespace Profiler
 						ThreadViewTimeLineMesh.WorldTransform =
 							new Matrix(sz / FrameWidth, 0.0,
 									   0.0, -1.0,
-									   -scrollLeft + start, ScrollSize.Height);//height
+									   -scrollPos + start, ScrollSize.Height);//height
 						canvas.Draw(ThreadViewTimeLineMesh);
 
 						//draw two vertical lines
-						start -= scrollLeft;
-						end -= scrollLeft;
+						start -= scrollPos;
+						end -= scrollPos;
 						ThreadViewTimeLineFrame.AddLine(new Point(start-0.5, 0.0), new Point(start-0.5, ScrollSize.Height), Colors.LightGreen);
 						ThreadViewTimeLineFrame.AddLine(new Point(start, 0.0), new Point(start, ScrollSize.Height), Colors.LightGreen);
 						ThreadViewTimeLineFrame.AddLine(new Point(end, 0.0), new Point(end, ScrollSize.Height), Colors.LightGreen);
@@ -564,7 +515,7 @@ namespace Profiler
 						ThreadViewTimeLineMesh.WorldTransform =
 							new Matrix(relativeThreadViewSize * FullWidth / FrameWidth, 0.0,
 									   0.0, -1.0,
-									   -scrollLeft + relativeThreadViewStart * FullWidth, ScrollSize.Height);//height
+									   -scrollPos + relativeThreadViewStart * FullWidth, ScrollSize.Height);//height
 
 						canvas.Draw(ThreadViewTimeLineMesh);
 					}
@@ -782,16 +733,8 @@ namespace Profiler
 						RaiseEvent(new UpdateStatusEventArgs(Data.Utils.ReadVlqString(response.Reader)));
 						break;
 					case DataResponse.Type.ReportLiveFrameTime:
-						uint framesToRead = response.Reader.ReadUInt32();
-						lock (currentLiveFrames)
-						{
-							for (uint i = 0; i < framesToRead; ++i)
-								currentLiveFrames.Add(response.Reader.ReadSingle());
-							int maxFramesHistory = 512;
-							if (currentLiveFrames.Count > maxFramesHistory)
-								currentLiveFrames.RemoveRange(0, currentLiveFrames.Count - maxFramesHistory);
-						}
-						Application.Current.Dispatcher.BeginInvoke(new Action(() => UpdateSurface()));
+					    if (liveFramesView != null)
+					    	liveFramesView.process(response.Reader);
 						break;
 
 					case DataResponse.Type.SettingsPack:

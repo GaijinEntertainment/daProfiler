@@ -48,6 +48,7 @@ namespace Profiler.Views
 
 			this.Loaded += MainWindow_Loaded;
 			this.Closing += MainWindow_Closing;
+			ProfilerClient.Get().ConnectionChanged += MainView_ConnectionChanged;
 
         }
 
@@ -70,7 +71,7 @@ namespace Profiler.Views
 		public delegate void SaveCaptureEventHandler(object sender, SaveCaptureEventArgs e);
 		public static readonly RoutedEvent SaveCaptureEvent = EventManager.RegisterRoutedEvent("SaveCaptureEvent", RoutingStrategy.Bubble, typeof(SaveCaptureEventHandler), typeof(MainView));
 
-		private String DefaultTitle
+		private static String DefaultTitle
 		{
 			get
 			{
@@ -82,6 +83,24 @@ namespace Profiler.Views
 		{
 			Title = String.IsNullOrWhiteSpace(message) ? DefaultTitle : message;
 		}
+		String lastFileName = DefaultTitle;
+		private void MainView_ConnectionChanged(IPAddress address, UInt16 port, ProfilerClient.State state, String message)
+		{
+			switch (state)
+			{
+				case ProfilerClient.State.Connecting:
+					UpdateTitle($"{DefaultTitle} connecting to {(address == null ? "null" : address.ToString())}:{port}...");
+					break;
+
+				case ProfilerClient.State.Disconnected:
+					UpdateTitle(lastFileName);
+					break;
+
+				case ProfilerClient.State.Connected:
+					UpdateTitle($"{DefaultTitle} connected to {address.ToString()}:{port}");
+                    break;
+			}
+		}
 
 		private void MainWindow_OpenCapture(object sender, OpenCaptureEventArgs e)
 		{
@@ -91,14 +110,14 @@ namespace Profiler.Views
 			if (FrameCaptureControl.LoadFile(e.Path))
 			{
 				//FileHistory.Add(e.Path);
-				UpdateTitle(e.Path);
+				UpdateTitle(lastFileName = e.Path);
 			}
 		}
 
 		private void MainWindow_SaveCapture(object sender, SaveCaptureEventArgs e)
 		{
 			//FileHistory.Add(e.Path);
-			UpdateTitle(e.Path);
+			UpdateTitle(lastFileName = e.Path);
 		}
 
 

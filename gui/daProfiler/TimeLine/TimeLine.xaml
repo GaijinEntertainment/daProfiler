@@ -11,8 +11,7 @@
     xmlns:DX="clr-namespace:Profiler.DirectX;assembly=Profiler.DirectX"
 	mc:Ignorable="d"
 	x:Class="Profiler.TimeLine"
-	x:Name="TimeLineControl" d:DesignWidth="822" d:DesignHeight="82"
-	d:DataContext="{d:DesignInstance {x:Type Profiler_Data:TestFrameCollection}, IsDesignTimeCreatable=True}" >
+	x:Name="TimeLineControl">
 
 
     <UserControl.Resources>
@@ -39,19 +38,9 @@
     </UserControl.Resources>
 
     <Grid x:Name="LayoutRoot" VerticalAlignment="Top">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="Auto"/>
-        </Grid.ColumnDefinitions>
-        <Grid Height="Auto" Name="panel">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="1*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Hidden" x:Name="ScrollArea">
-                <DX:DirectXCanvas x:Name="surface" Height="70" Background="{DynamicResource OptickContentBackground}" VerticalAlignment="Top" />
-            </ScrollViewer>
-            <ScrollBar Orientation="Horizontal" Width="Auto" x:Name="scrollBar" Grid.Row="1" VerticalAlignment="Bottom" Margin="0,0,16,0" />
-        </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Hidden" x:Name="ScrollArea" Grid.Row="1" VerticalAlignment="Top" >
+           <DX:DirectXCanvas x:Name="surface" Height="70" Background="{DynamicResource OptickContentBackground}"/>
+        </ScrollViewer>
+        <ScrollBar Orientation="Horizontal" x:Name="scrollBar" Grid.Row="2" VerticalAlignment="Bottom" />
     </Grid>
 </UserControl>

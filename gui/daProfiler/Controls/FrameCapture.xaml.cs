@@ -93,6 +93,8 @@ namespace Profiler.Controls
 			timeLine.StopCapture += TimeLine_StopCapture;
 			timeLine.ShowWarning += TimeLine_ShowWarning;
 			timeLine.UpdateStatus += TimeLine_UpdateStatus;
+			timeLine.liveFramesView = liveView;
+
 			warningBlock.Visibility = Visibility.Collapsed;
 
             AddressBarVM = (AddressBarViewModel)FindResource("AddressBarVM");
@@ -146,15 +148,11 @@ namespace Profiler.Controls
 			switch (state)
 			{
 				case ProfilerClient.State.Connecting:
-					StatusText.Text = $"Connecting {(address == null ? "null" : address.ToString())}:{port}...";
-					StatusText.Foreground = new SolidColorBrush(Colors.LightGreen);
 					ShowWarning(String.Empty, String.Empty);
 					break;
 
 				case ProfilerClient.State.Disconnected:
 					ClientStatusText.Visibility = Visibility.Collapsed;
-					StatusText.Text = "Offline";
-					StatusText.Foreground = new SolidColorBrush(String.IsNullOrEmpty(message) ? Colors.Black : Colors.Red);
 					ConnectButton.IsChecked = false;
 					StartButton.IsChecked = false;
 					if (!String.IsNullOrEmpty(message))
@@ -162,8 +160,6 @@ namespace Profiler.Controls
 					break;
 
 				case ProfilerClient.State.Connected:
-					StatusText.Text = $"Connected to {address.ToString()}:{port}.";
-					StatusText.Foreground = new SolidColorBrush(Colors.White);
 					ConnectButton.IsChecked = true;
 					ShowWarning(String.Empty, String.Empty);
                     break;

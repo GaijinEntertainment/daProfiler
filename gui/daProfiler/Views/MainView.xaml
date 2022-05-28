@@ -14,7 +14,7 @@
         AllowDrop="True"
         Icon="../Resources/icon.ico" TextOptions.TextFormattingMode="Display"
         TitleCaps="False"
-        TitlebarHeight="28"
+        TitlebarHeight="20"
         IconBitmapScalingMode="HighQuality"
         BorderBrush="{DynamicResource AccentColorBrush}"
         GlowBrush="{DynamicResource AccentColorBrush}"
@@ -55,12 +55,6 @@
             <StackPanel Orientation="Horizontal">
                 <Button Margin="-2" ToolTip="Navigate to the Wiki" x:Name="OpenWikiIcon" Click="OpenWikiIcon_Click">
                     <ContentControl Style="{StaticResource appbar_book_perspective_help}" />
-                </Button>
-                <Button Margin="-2" ToolTip="Ask a question" x:Name="ContactDeveloperIcon" Click="ContactDeveloperIcon_Click">
-                    <ContentControl Style="{StaticResource appbar_message_profanity}" />
-                </Button>
-                <Button Margin="-2" ToolTip="Report a bug" x:Name="ReportBugIcon" Click="ReportBugIcon_Click">
-                    <ContentControl Style="{StaticResource appbar_bug}" />
                 </Button>
             </StackPanel>
         </MahApps:WindowCommands>

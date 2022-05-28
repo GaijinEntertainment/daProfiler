@@ -15,7 +15,6 @@
              MinHeight="400">
     
     <UserControl.Resources>
-        <Controls:MultiplyConverter x:Key="MultiplyConverter"/>
         <Controls:SubtractConverter x:Key="SubtractConverter"/>
         <sys:Double x:Key="ThreadViewHeightRatio">0.5</sys:Double>
          <DataTemplate DataType="{x:Type ControlsViewModel:SummaryViewerModel}">
@@ -41,10 +40,11 @@
     </UserControl.InputBindings>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="227"/>
+            <RowDefinition Height="24"/>
+            <RowDefinition Height="70"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <Grid>
+        <Grid Panel.ZIndex="4" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition />
@@ -53,7 +53,7 @@
                 <ColumnDefinition Width="1*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Grid>
+            <Grid Panel.ZIndex="4" Grid.Row="1">
                 <StackPanel Orientation="Horizontal" Margin="2,2,0,-2" Grid.ColumnSpan="2" HorizontalAlignment="Left" VerticalAlignment="Top">
                     
                     <ToggleButton x:Name="ConnectButton" IsChecked="{Binding IsConnected, Mode=TwoWay}" Width="{StaticResource DefaultButtonSize}" Height="{StaticResource DefaultButtonSize}" Unchecked="ConnectButton_Unchecked" Checked="ConnectButton_Checked" Padding="-6">
@@ -137,15 +137,12 @@
                     </StackPanel>
                 </StackPanel>
             </Grid>
-            <Border Grid.Row="1">
-               <Profiler:TimeLine Margin="2,2,0,99" x:Name="timeLine" Loaded="timeLine_Loaded" />
-            </Border>
-            <Border Grid.RowSpan="2"  Grid.Column="1" 
-                    DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
-                <ContentControl   Content="{Binding SummaryVM}" Margin="1"/> 
-            </Border>
         </Grid>
-        <Grid Grid.Row="1" x:Name="BottomGrid">
+        <DockPanel Grid.Row="1" LastChildFill="True" >
+            <ControlsView:LiveConnectionView x:Name="liveView" DockPanel.Dock="Left"/>
+            <Profiler:TimeLine x:Name="timeLine" Loaded="timeLine_Loaded" HorizontalAlignment="Stretch" />
+        </DockPanel >
+        <Grid Grid.Row="2" x:Name="BottomGrid">
             <Grid.Resources>
                 <SolidColorBrush x:Key="TabBackground">Red</SolidColorBrush>
             </Grid.Resources>
@@ -158,28 +155,47 @@
                     </MenuItem>
                 </ContextMenu>
             </Grid.ContextMenu>
-            <xcad:DockingManager AllowMixedOrientation="True" BorderBrush="Black" BorderThickness="1" Margin="0,-120,0,0">
+            <xcad:DockingManager AllowMixedOrientation="True" BorderBrush="Black" BorderThickness="1" Margin="0,0,0,0">
                 <xcad:DockingManager.Theme>
                     <xcad:Vs2013DarkTheme />
                 </xcad:DockingManager.Theme>
                 <xcad:DockingManager.DocumentHeaderTemplate>
                     <DataTemplate>
                         <StackPanel Orientation="Horizontal">
-                            <Image Source="{Binding IconSource}" Margin="0,0,4,0"/>
-                            <TextBlock Text="{Binding Title}" />
+                            <Image Source="{Binding IconSource}" Margin="0,0,2,0"/>
+                            <TextBlock Text="{Binding Title}"  FontSize="12"/>
                         </StackPanel>
                     </DataTemplate>
                 </xcad:DockingManager.DocumentHeaderTemplate>
                 <xcad:LayoutRoot x:Name="_layoutRoot">
                     <xcad:LayoutPanel Orientation="Vertical">
-                        <xcad:LayoutAnchorablePaneGroup DockHeight="2*">
+<!--
+                        <xcad:LayoutAnchorablePaneGroup DockHeight="1*">
+                            <xcad:LayoutAnchorablePane x:Name="LayoutDocumentPane2" >
+                                <xcad:LayoutAnchorable ContentId="documentTimeLine" Title="Frames"
+                                                       CanAutoHide="False"
+                                                       CanHide="False"
+                                                       CanClose="False"
+                                                       CanFloat="False"
+                                                       CanDockAsTabbedDocument="False">
+                                     <Profiler:TimeLine x:Name="timeLine" Loaded="timeLine_Loaded" />
+                                </xcad:LayoutAnchorable>
+                                <xcad:LayoutAnchorable ContentId="documentSummary" Title="Summary" IsVisible="False">
+                                    <Border DataContext="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type UserControl}}}">
+                                        <ContentControl   Content="{Binding SummaryVM}" Margin="1"/>
+                                    </Border>
+                                </xcad:LayoutAnchorable>
+                            </xcad:LayoutAnchorablePane>
+                        </xcad:LayoutAnchorablePaneGroup>
+-->
+                        <xcad:LayoutAnchorablePaneGroup DockHeight="8*">
                             <xcad:LayoutAnchorablePane x:Name="LayoutDocumentPane">
                                 <xcad:LayoutAnchorable ContentId="document1" Title="Threads" >
                                     <Controls:EventThreadView x:Name="EventThreadViewControl" MinHeight="1" Height="Auto" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" />
                                 </xcad:LayoutAnchorable>
                             </xcad:LayoutAnchorablePane>
                         </xcad:LayoutAnchorablePaneGroup>
-                        <xcad:LayoutPanel Orientation="Horizontal" DockHeight="1*">
+                        <xcad:LayoutPanel Orientation="Horizontal" DockHeight="4*">
                                 <xcad:LayoutAnchorablePaneGroup DockWidth="2*">
                                 <xcad:LayoutAnchorablePane CanRepositionItems="True">
                                     <!--<xcad:LayoutAnchorable ContentId="temp" Title="Temp" CanHide="False" CanClose="False" AutoHideWidth="240">

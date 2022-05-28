@@ -45,7 +45,6 @@
     <DefineConstants>TRACE;DEBUG;NDA_CODE_SECTION</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <NoWarn>1668</NoWarn>
     <Prefer32Bit>false</Prefer32Bit>
@@ -331,6 +330,9 @@
     <Compile Include="Views\FunctionSummaryView.xaml.cs">
       <DependentUpon>FunctionSummaryView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\LiveConnectionView.xaml.cs">
+      <DependentUpon>LiveConnectionView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ScreenShotView.xaml.cs">
       <DependentUpon>ScreenShotView.xaml</DependentUpon>
     </Compile>
@@ -431,6 +433,10 @@
     <Page Include="Views\FunctionSummaryView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\LiveConnectionView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\ScreenShotView.xaml">
       <SubType>Designer</SubType>
