@@ -25,6 +25,7 @@ namespace Profiler.Controls
 		{
 			InitializeComponent();
 			DataContextChanged += FunctionSearch_DataContextChanged;
+			FunctionSearchBox.AddHandler(FrameworkElement.MouseLeftButtonUpEvent, new MouseButtonEventHandler(FunctionSearchBox_MouseUp), true);
 		}
 
 		FrameGroup Group { get; set; }
@@ -120,6 +121,11 @@ namespace Profiler.Controls
 
 			if (e.Key == Key.Enter)
 				Close();
+		}
+		private void FunctionSearchBox_MouseUp(object sender, MouseButtonEventArgs e)
+		{
+		    if (!SearchPopup.IsOpen)
+			    Open();
 		}
 
 		private void FunctionSearchDataGrid_MouseUp(object sender, MouseButtonEventArgs e)

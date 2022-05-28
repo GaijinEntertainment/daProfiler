@@ -28,6 +28,7 @@
                         MinHeight="{StaticResource DefaultButtonSize}"
                         Background="{StaticResource OptickContentBackground}"
                         TextBoxBase.TextChanged="FunctionSearchBox_TextChanged"
+                        MouseLeftButtonUp="FunctionSearchBox_MouseUp"
                         PreviewKeyDown="FunctionSearchBox_KeyDown">
         </TextBox>
         <Popup Width="400" Height="Auto" Placement="Bottom" x:Name="SearchPopup" StaysOpen="False" PlacementTarget="{Binding ElementName=FunctionSearchBox}" IsOpen="False" Visibility="Collapsed">
