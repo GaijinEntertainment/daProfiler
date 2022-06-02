@@ -12,13 +12,15 @@ namespace Profiler.Controls.ViewModels
 	{
 		private FrameGroup Group { get; set; }
 		private EventDescription Description { get; set; }
+		private FrameList.Type Type { get; set; }
 
-		public void Load(FrameGroup group, EventDescription desc)
+		public void Load(FrameGroup group, EventDescription desc, FrameList.Type fType = FrameList.Type.None)
 		{
-			if (group != Group || desc != Description)
+			if (group != Group || desc != Description || Type != fType)
 			{
 				Group = group;
 				Description = desc;
+				Type = fType;
 				IsDirty = true;
 				Update();
 			}
@@ -26,13 +28,13 @@ namespace Profiler.Controls.ViewModels
 
 		public bool IsDirty { get; set; }
 
-		protected virtual void Update(FrameGroup group, EventDescription desc) { }
+		protected virtual void Update(FrameGroup group, EventDescription desc, FrameList.Type fType) { }
 
 		public void Update()
 		{
 			if (IsDirty && IsActive)
 			{
-				Update(Group, Description);
+				Update(Group, Description, Type);
 				IsDirty = false;
 			}
 		}
@@ -51,11 +53,24 @@ namespace Profiler.Controls.ViewModels
 		public delegate void OnLoadedHandler(SamplingFrame frame);
 		public event OnLoadedHandler OnLoaded;
 
-		protected override void Update(FrameGroup group, EventDescription desc)
+		protected override void Update(FrameGroup group, EventDescription desc, FrameList.Type fType = FrameList.Type.None)
 		{
 			SamplingFrame frame = (group != null && desc != null) ? group.CreateSamplingFrame(desc, Reason) : null;
 			OnLoaded?.Invoke(frame);
-			base.Update(group, desc);
+			base.Update(group, desc, fType);
+		}
+	}
+
+	public class MergedEventViewModel : FunctionOnDemandViewModel
+	{
+		public delegate void OnLoadedHandler(EventFrame frame);
+		public event OnLoadedHandler OnLoaded;
+
+		protected override void Update(FrameGroup group, EventDescription desc, FrameList.Type fType = FrameList.Type.None)
+		{
+			EventFrame frame = (group != null && desc != null) ? group.CreateMergedEventFrame(desc, fType) : null;
+			OnLoaded?.Invoke(frame);
+			base.Update(group, desc, fType);
 		}
 	}
 }

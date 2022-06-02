@@ -291,11 +291,12 @@ namespace Profiler
 			FrameGroup group = eventFrame.Group;
 
 			EventDescription desc = node.Entry.Description;
-			callstacks = group.GetCallstacks(desc);
+			double duration = 0;
+			callstacks = group.GetCallstacks(desc, ref duration);
 
 			if (callstacks.Count > 0)
 			{
-				SamplingFrame frame = new SamplingFrame(callstacks, group);
+				SamplingFrame frame = new SamplingFrame(callstacks, group, duration);
 				FocusFrameEventArgs args = new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, frame);
 				RaiseEvent(args);
 			}

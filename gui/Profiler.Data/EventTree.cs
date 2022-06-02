@@ -370,9 +370,9 @@ namespace Profiler.Data
 					}
 				}
 
-                while (curNodes.Count != 1 &&
+				while (curNodes.Count != 1 &&
 					((entry.Depth >= 0 && curNodes.Peek().Entry.Depth >= 0 && entry.Depth <= curNodes.Peek().Entry.Depth) ||
-				       ((entry.Depth < 0 || curNodes.Peek().Entry.Depth < 0) && entry.Start >= curNodes.Peek().Entry.Finish)))
+					   ((entry.Depth < 0 || curNodes.Peek().Entry.Depth < 0) && entry.Start >= curNodes.Peek().Entry.Finish)))
 				{
 					curNodes.Pop();
 				}
@@ -388,6 +388,38 @@ namespace Profiler.Data
 			{
 				curNodes.Pop();
 			}
+		}
+
+		static private void addMerged(EventNode to, EventDescription desc, long finish, int depth, List<EventNode> gatheredChildren)
+        {
+			if (desc == null)
+				return;
+			EventNode childNode = new EventNode(to, new Entry(desc, 0, finish, depth));
+			to.AddChild(childNode);
+			BuildMergedTree(childNode, gatheredChildren, depth + 1);
+			gatheredChildren.Clear();
+		}
+		static public void BuildMergedTree(EventNode to, List<EventNode> entries, int depth)
+		{
+			if (entries.Count == 0)
+				return;
+			entries.Sort((e1, e2) => e1.Description.Id - e2.Description.Id);
+			List<EventNode> gatheredChildren = new List<EventNode>();
+			long durationTick = 0;
+			EventDescription lastDesc = null;
+			foreach (var entry in entries)
+			{
+				if (entry.Description != lastDesc)
+				{
+					addMerged(to, lastDesc, durationTick, depth, gatheredChildren);
+					durationTick = 0;
+				}
+				lastDesc = entry.Description;
+				durationTick += entry.Entry.Finish - entry.Entry.Start;
+				foreach (EventNode child in entry.Children)
+					gatheredChildren.Add(child);
+			}
+			addMerged(to, lastDesc, durationTick, depth, gatheredChildren);
 		}
 
 		public void ForEachChild(TreeNodeDelegate action)

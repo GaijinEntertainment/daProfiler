@@ -220,22 +220,20 @@ namespace Profiler.Data
 
 	public class SamplingNode : TreeNode<SamplingDescription>
 	{
-		public UInt64 Address { get; private set; }
-		public override String Name { get { return Description.Name; } }
 		public String NameWithModule { get { return String.Format("{0} [{1}]", Name, Description.ModuleShortName); } }
 
 		private List<BaseTreeNode> shadowNodes = new List<BaseTreeNode>();
 		public override List<BaseTreeNode> ShadowNodes { get { return shadowNodes; } }
 
 		// Participated in sampling process
-		public uint Passed { get; private set; }
+		public double Passed { get; private set; }
 
 		// Stopped at this function
-		public uint Sampled
+		public double Sampled
 		{
 			get
 			{
-				uint total = Passed;
+				double total = Passed;
 				foreach (SamplingNode child in Children)
 				{
 					total -= child.Passed;
@@ -244,9 +242,7 @@ namespace Profiler.Data
 			}
 		}
 
-		//public SamplingNode Parent { get; private set; }
-
-		SamplingNode(SamplingNode root, SamplingDescription desc, UInt32 passed)
+		SamplingNode(SamplingNode root, SamplingDescription desc, double passed)
 			: base(root, desc, passed)
 		{
 			Passed = passed;
@@ -319,26 +315,26 @@ namespace Profiler.Data
 			child.AppendMerge(callstack, index + 1, rootNode);
 		}
 
-		void Update()
+		void Update(double mul)
 		{
 			ForEach((node, level) =>
 			{
 				SamplingNode sNode = (node as SamplingNode);
-				sNode.Duration = sNode.Passed;
+				sNode.Duration = sNode.Passed * mul;
 
-				uint passedChildren = 0;
+				double passedChildren = 0;
 				sNode.Children.ForEach(child => passedChildren += (child as SamplingNode).Passed);
-				sNode.ChildrenDuration = passedChildren;
+				sNode.ChildrenDuration = passedChildren * mul;
 
 				return true;
 			});
 		}
 
-		public static SamplingNode Create(List<Callstack> callstacks)
+		public static SamplingNode Create(List<Callstack> callstacks, double totalDuration)
 		{
-			SamplingNode node = new SamplingNode(null, null, (uint)callstacks.Count);
+			SamplingNode node = new SamplingNode(null, null, totalDuration);
 			callstacks.ForEach(c => node.AppendMerge(c, 0, node));
-			node.Update();
+			node.Update(totalDuration/callstacks.Count);
 			node.Sort();
 			return node;
 		}
@@ -409,7 +405,7 @@ namespace Profiler.Data
             }
         }
 
-        public override double Duration { get { return 130.0; } }
+        public override double Duration { get { return Root == null ? 130.0 : Root.Duration; } }
 
 		public override void Load()
 		{
@@ -427,10 +423,10 @@ namespace Profiler.Data
 			SampleCount = response.Reader.ReadInt32();
 		}
 
-		public SamplingFrame(List<Callstack> callstacks, FrameGroup group) : base(null, group)
+		public SamplingFrame(List<Callstack> callstacks, FrameGroup group, double totalDuration) : base(null, group)
 		{
 			SampleCount = callstacks.Count;
-			Root = SamplingNode.Create(callstacks);
+			Root = SamplingNode.Create(callstacks, totalDuration);
 		}
 	}
 }

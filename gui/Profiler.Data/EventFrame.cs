@@ -418,6 +418,11 @@ namespace Profiler.Data
 			Init(new FrameHeader(new Durable(node.Entry.Start, node.Entry.Finish), frame.Header.ThreadIndex, frame.Header.FiberIndex, frame.Header.FrameType), entries);
 			Synchronization = frame.Synchronization;
 		}
+		public EventFrame(FrameHeader header, EventTree tree, FrameGroup group) : base(null, group)
+		{
+			root = tree;
+			Entries.Add(tree.Entry);
+		}
 	}
 
 	public class FrameList

@@ -213,12 +213,14 @@ namespace Profiler.Controls
 		public class TooltipInfo
 		{
 			public String Text;
+			public List<String> Texts = new List<String>();
 			public Rect Rect;
 			public Rect RowRect;
 
 			public void Reset()
 			{
 				Text = String.Empty;
+				Texts = new List<String>();
 				Rect = new Rect();
 				RowRect = new Rect();
 			}
@@ -720,41 +722,60 @@ namespace Profiler.Controls
 			if (Input.IsDrag)
 				return;
 
-			if (ToolTipPanel != null && !ToolTipPanel.Rect.IsEmpty)
+			if (ToolTipPanel != null)
 			{
-				HoverLines.AddRect(ToolTipPanel.Rect, FrameHover.Color);
-				double left = ToolTipPanel.Rect.Left, right = ToolTipPanel.Rect.Right, top = 0, bottom = 1000;
-				HoverLines.AddRect(new Rect(left - 1.5, top - 1, 0.75, bottom), FrameHoverFrame.Color);
-				HoverLines.AddRect(new Rect(right + 0.75, top - 1, 0.75, bottom), FrameHoverFrame.Color);
-				if (!ToolTipPanel.RowRect.IsEmpty)
-					HoverMesh.AddRect(new Rect(ToolTipPanel.Rect.Left, ToolTipPanel.RowRect.Top, ToolTipPanel.Rect.Width, ToolTipPanel.RowRect.Height), Color.FromArgb(30, FrameHoverFrame.Color.R, FrameHoverFrame.Color.G, FrameHoverFrame.Color.B));
-			}
-
-			if (ToolTipPanel != null && !String.IsNullOrWhiteSpace(ToolTipPanel.Text))
-			{
-				Size size = surface.Text.Measure(ToolTipPanel.Text);
-
-				Rect textArea = new Rect(Input.MousePosition.X - size.Width * 0.5 + ToolTipOffset.X, ToolTipPanel.Rect.Top - size.Height + ToolTipOffset.Y, size.Width, size.Height);
-				surface.Text.Draw(textArea.TopLeft, ToolTipPanel.Text, Colors.White, TextAlignment.Left);
-
+	            List<String> texts = new List<String>();
+	            texts.Add(ToolTipPanel.Text);
+	            texts.AddRange(ToolTipPanel.Texts);
+	            Size maxTextSize = new Size();
+	            foreach (String text in texts)
+	            {
+					if (!String.IsNullOrWhiteSpace(text))
+					{
+						Size size = surface.Text.Measure(text);
+						maxTextSize.Width = Math.Max(maxTextSize.Width, size.Width);
+						maxTextSize.Height += size.Height + (maxTextSize.Height == 0 ?  0 : 1);
+					}
+				}
+				if (!ToolTipPanel.Rect.IsEmpty)
+				{
+					HoverLines.AddRect(ToolTipPanel.Rect, FrameHover.Color);
+					double left = ToolTipPanel.Rect.Left, right = ToolTipPanel.Rect.Right, top = 0, bottom = 1000;
+					HoverLines.AddRect(new Rect(left - 1.5, top - 1, 0.75, bottom), FrameHoverFrame.Color);
+					HoverLines.AddRect(new Rect(right + 0.75, top - 1, 0.75, bottom), FrameHoverFrame.Color);
+					if (!ToolTipPanel.RowRect.IsEmpty)
+						HoverMesh.AddRect(new Rect(ToolTipPanel.Rect.Left, ToolTipPanel.RowRect.Top, ToolTipPanel.Rect.Width, ToolTipPanel.RowRect.Height), Color.FromArgb(30, FrameHoverFrame.Color.R, FrameHoverFrame.Color.G, FrameHoverFrame.Color.B));
+				}
+	    
+				Rect textArea = new Rect(Input.MousePosition.X - maxTextSize.Width * 0.5 + ToolTipOffset.X, ToolTipPanel.Rect.Top - maxTextSize.Height + ToolTipOffset.Y, maxTextSize.Width, maxTextSize.Height);
+				double currentY = 0;
+	            foreach (String text in texts)
+	            {
+					if (!String.IsNullOrWhiteSpace(text))
+					{
+						Size size = surface.Text.Measure(text);
+						surface.Text.Draw(new Point(textArea.X, textArea.Y + currentY), text, Colors.White, TextAlignment.Left);
+						currentY += size.Height + (currentY == 0 ? 0 : 1);
+					}
+				}
 				textArea.Inflate(ToolTipMargin);
 				HoverMesh.AddRect(textArea, HoverBackground);
 			}
-
+	
 			HoverLines.Update(canvas.RenderDevice);
 			canvas.Draw(HoverLines);
-
+	
 			HoverMesh.Update(canvas.RenderDevice);
 			canvas.Draw(HoverMesh);
 		}
-
+	
 		void OnDraw(DirectX.DirectXCanvas canvas, DirectXCanvas.Layer layer)
 		{
 			if (layer == DirectXCanvas.Layer.Background)
 			{
 				canvas.Draw(BackgroundMesh);
 			}
-
+	
 			Rect box = new Rect(0, 0, Scroll.Width, Scroll.Height);
 			foreach (ThreadRow row in Rows)
 			{

@@ -121,12 +121,19 @@ namespace Profiler.DirectX
 			TextMesh = canvas.CreateMesh(DirectXCanvas.MeshType.Text);
 			TextMesh.UseAlpha = true;
 		}
+		private byte[] ascii(String text)
+        {
+			System.Text.ASCIIEncoding ascii = new System.Text.ASCIIEncoding();
+			return ascii.GetBytes(text);
+		}
 
 		public Size Measure(String text)
 		{
 			Size2F size = new Size2F(0, 0);
-			foreach (char c in text.ToCharArray())
+			foreach (byte c in ascii(text))
 			{
+				if (c >= SegoeUI.Symbols.Length)
+					continue;
 				Size2F symbolSize = SegoeUI.Symbols[c].Size;
 				size.Width = size.Width + SegoeUI.Symbols[c].Advance;
 				size.Height = Math.Max(size.Height, SegoeUI.Symbols[c].Size.Height);
@@ -139,7 +146,7 @@ namespace Profiler.DirectX
 			Color textColor = Utils.Convert(color);
 			pos = new System.Windows.Point((int)pos.X, (int)pos.Y);
 
-			char[] str = text.ToCharArray();
+			byte[] str = ascii(text);
 
 			switch (alignment)
 			{
@@ -208,7 +215,7 @@ namespace Profiler.DirectX
 			Color textColor = Utils.Convert(color);
 			pos = new System.Windows.Point((int)pos.X, (int)pos.Y);
 
-			char[] str = text.ToCharArray();
+			byte[] str = ascii(text);
 
 			switch (alignment)
 			{

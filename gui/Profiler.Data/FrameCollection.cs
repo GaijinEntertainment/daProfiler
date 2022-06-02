@@ -483,9 +483,10 @@ namespace Profiler.Data
 			return threadData;
 		}
 
-		public List<Callstack> GetCallstacks(EventDescription desc, CallStackReason type = CallStackReason.AutoSample)
+		public List<Callstack> GetCallstacks(EventDescription desc, ref double total, CallStackReason type = CallStackReason.AutoSample)
 		{
 			List<Callstack> callstacks = new List<Callstack>();
+			total = 0;
 
 			foreach (ThreadData thread in Threads)
 			{
@@ -497,6 +498,7 @@ namespace Profiler.Data
 					{
 						foreach (Entry entry in entries)
 						{
+							total += entry.Duration;
 							Utils.ForEachInsideIntervalStrict(thread.Callstacks, entry, c => {
 								if ((c.Reason & type) != 0)
 									accumulator.Add(c);
@@ -510,11 +512,57 @@ namespace Profiler.Data
 
 			return callstacks;
 		}
-
-        public SamplingFrame CreateSamplingFrame(EventDescription desc, CallStackReason type = CallStackReason.AutoSample)
+		public List<Callstack> GetCallstacks(EventDescription desc, CallStackReason type = CallStackReason.AutoSample)
         {
-            return new SamplingFrame(GetCallstacks(desc, type), this);
+			double totalDuration = 0;
+			return GetCallstacks(desc, ref totalDuration, type);
         }
+
+
+		public SamplingFrame CreateSamplingFrame(EventDescription desc, CallStackReason type = CallStackReason.AutoSample)
+        {
+			double duration = 0;
+			List<Callstack> callstacks = GetCallstacks(desc, ref duration, type);
+			return new SamplingFrame(callstacks, this, duration);
+        }
+
+		public List<EventNode> GetMergedEvents(EventDescription desc, FrameList.Type fType = FrameList.Type.None)
+		{
+			List<EventNode> sameNodes = new List<EventNode>();
+			double totalDuration = 0;
+			ThreadMask mask = fType == FrameList.Type.GPU ? ThreadMask.GPU : ~ThreadMask.GPU;
+			foreach (ThreadData thread in Threads)
+			{
+				if ((thread.Description.Mask & (int)ThreadMask.GPU) != (int)(mask & ThreadMask.GPU))
+					continue;
+				foreach (EventFrame frame in thread.Events)
+				{
+					frame.Root.ForEachChild((node, level) =>
+					{
+						EventNode eventNode = (node as EventNode);
+						if (eventNode == null)
+							return true;
+						if (eventNode.Description == desc)
+						{
+							sameNodes.Add(eventNode);
+							totalDuration += eventNode.Duration;
+						}
+						return true;
+					});
+				}
+			}
+			return sameNodes;
+		}
+
+        public EventFrame CreateMergedEventFrame(EventDescription desc, FrameList.Type fType = FrameList.Type.None)
+        {
+			EventFrame frame = new EventFrame(new FrameHeader(new Durable(0,0), -1), new List<Entry>(), this);
+			EventNode node = new EventNode(null, new Entry(null,0,0,0));
+			EventTree.BuildMergedTree(node, GetMergedEvents(desc, fType), 0);
+			if (node.Children.Count == 0 || !(node.Children[0] is EventNode))
+				return frame;
+			return new EventFrame(frame, node.Children[0] as EventNode);//new EventTree(frame, GetMergedEvents(desc))
+		}
 
 		public bool UpdateDescriptionMask(EventDescription description)
 		{

@@ -88,6 +88,9 @@
       <DependentUpon>EventThreadView.xaml</DependentUpon>
     </Compile>
     <Compile Include="RoutedEvents.cs" />
+    <Compile Include="ThreadView\MergedEventThreadView.xaml.cs">
+      <DependentUpon>MergedEventThreadView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ThreadView\SamplingThreadView.xaml.cs">
       <DependentUpon>SamplingThreadView.xaml</DependentUpon>
     </Compile>
@@ -129,6 +132,10 @@
       <SubType>Designer</SubType>
     </Resource>
     <Page Include="ThreadView\EventThreadView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ThreadView\MergedEventThreadView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

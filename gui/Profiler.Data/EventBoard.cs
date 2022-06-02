@@ -116,11 +116,11 @@ namespace Profiler.Data
 
 		[DisplayName("Self %")]
 		public double SelfPercent { get; private set; }
-		public uint Self { get; private set; }
+		public double Self { get; private set; }
 
 		[DisplayName("Total %")]
 		public double TotalPercent { get; private set; }
-		public uint Total { get; private set; }
+		public double Total { get; private set; }
 
 		public String Module { get { return Description.ModuleShortName; } }
 		public String Path { get { return Description.Path.ShortPath; } }

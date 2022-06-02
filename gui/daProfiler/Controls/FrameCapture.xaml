@@ -25,6 +25,7 @@
         <ControlsViewModel:FunctionInstanceViewModel x:Key="FunctionInstanceVM" Origin="IndividualCalls" Title="Per Call Statistics" />
         <ControlsViewModel:AddressBarViewModel x:Key="AddressBarVM" />
         <ControlsViewModel:CaptureSettingsViewModel x:Key="CaptureSettingsVM" />
+        <BaseControlsViewModel:MergedEventViewModel x:Key="MergedEventVM" />
         <BaseControlsViewModel:SamplingViewModel x:Key="FunctionSamplingVM" Reason="AutoSample" />
         <BaseControlsViewModel:SamplingViewModel x:Key="SysCallsSamplingVM" Reason="SysCall" />
     </UserControl.Resources>
@@ -227,14 +228,17 @@
                             </xcad:LayoutAnchorablePaneGroup>
                             <xcad:LayoutAnchorablePaneGroup DockWidth="5*">
                                 <xcad:LayoutAnchorablePane>
-                                    <xcad:LayoutAnchorable ContentId="function_tree" Title="Function Tree" CanClose="False">
+                                    <xcad:LayoutAnchorable ContentId="function_tree" Title="Event Tree" CanClose="False">
                                         <Profiler:FrameInfo x:Name="FrameInfoControl" />
                                     </xcad:LayoutAnchorable>
-                                    <xcad:LayoutAnchorable ContentId="sampling_tree" Title="Function Callstacks" CanClose="False">
+                                    <xcad:LayoutAnchorable ContentId="sampling_tree" Title="Function Sampling Callstacks" CanClose="False">
                                         <Profiler:SampleInfo x:Name="SampleInfoControl" CallstackType="AutoSample" VM="{StaticResource FunctionSamplingVM}" />
                                     </xcad:LayoutAnchorable>
-                                    <xcad:LayoutAnchorable ContentId="sampling_tree_sharpdx" Title="Function Flamegraph" CanClose="False">
+                                    <xcad:LayoutAnchorable ContentId="sampling_tree_sharpdx" Title="Function Sampling Flamegraph" CanClose="False">
                                         <Controls:SamplingThreadView x:Name="SamplingTreeControl" DataContext="{StaticResource FunctionSamplingVM}" />
+                                    </xcad:LayoutAnchorable>
+                                    <xcad:LayoutAnchorable ContentId="event_tree_sharpdx" Title="Event Flamegraph" CanClose="False">
+                                        <Controls:MergedEventThreadView x:Name="EventTreeControl" DataContext="{StaticResource MergedEventVM}" />
                                     </xcad:LayoutAnchorable>
                                     <xcad:LayoutAnchorable ContentId="syscalls_tree" Title="Function SysCalls" CanClose="False">
                                         <Profiler:SampleInfo x:Name="SysCallInfoControl" CallstackType="SysCall" VM="{StaticResource SysCallsSamplingVM}" />

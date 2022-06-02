@@ -104,6 +104,7 @@ namespace Profiler.Controls
 			CaptureSettingsVM = (CaptureSettingsViewModel)FindResource("CaptureSettingsVM");
 			CaptureSettingsVM.notifier = this;
 
+			MergedEventVM = (MergedEventViewModel)FindResource("MergedEventVM");
 			FunctionSamplingVM = (SamplingViewModel)FindResource("FunctionSamplingVM");
 			SysCallsSamplingVM = (SamplingViewModel)FindResource("SysCallsSamplingVM");
 
@@ -130,6 +131,7 @@ namespace Profiler.Controls
 		FunctionSummaryViewModel FunctionThreadSummaryVM { get; set; }
 		FunctionInstanceViewModel FunctionInstanceVM { get; set; }
 
+		MergedEventViewModel MergedEventVM { get; set; }
 		SamplingViewModel FunctionSamplingVM { get; set; }
 		SamplingViewModel SysCallsSamplingVM { get; set; }
 
@@ -211,6 +213,7 @@ namespace Profiler.Controls
 					FunctionThreadSummaryVM.Load(group, desc, eventFrame.Header.FrameType, eventFrame.Header.ThreadIndex);
 					FunctionInstanceVM.Load(group, desc, eventFrame.Header.FrameType);
 
+					MergedEventVM.Load(group, desc, eventFrame.Header.FrameType);
 					FunctionSamplingVM.Load(group, desc);
 					SysCallsSamplingVM.Load(group, desc);
 
@@ -282,6 +285,7 @@ namespace Profiler.Controls
 			FunctionThreadSummaryVM.Load(null, null);
 			FunctionInstanceVM.Load(null, null);
 
+			MergedEventVM.Load(null, null);
 			FunctionSamplingVM.Load(null, null);
 			SysCallsSamplingVM.Load(null, null);
 

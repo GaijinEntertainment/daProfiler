@@ -96,7 +96,7 @@ namespace Profiler.Controls
 
 		private void Row_EventNodeHover(Point mousePos, Rect rect, ThreadRow row, EventNode node)
 		{
-			ThreadViewControl.ToolTipPanel = node != null ? new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1:0.#} ({2:0.#}%)", node.Description.FullName, node.Duration, 100.0 * node.Duration / Frame.Root.Duration), Rect = rect } : null;
+			ThreadViewControl.ToolTipPanel = node != null ? new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1} ({2:0.#}%)", node.Description.FullName, Utils.ConvertMsToString(node.Duration), 100.0 * node.Duration / Frame.Root.Duration), Rect = rect } : null;
 		}
 
 		private FrameGroup Group { get; set; }
