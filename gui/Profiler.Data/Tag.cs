@@ -80,6 +80,12 @@ namespace Profiler.Data
 					break;
 			int argsStart = strLen+1;
 			int argsCount = (len - argsStart)/4;
+			if (argsCount == 0 || strLen == len)
+			{
+				//do not process string long way, if there are no arguments anyway
+				Value = System.Text.Encoding.ASCII.GetString(bytes);
+				return true;
+			}
 			String st = "";
 			for (int i = 0; i < strLen; ++i)
 			{
