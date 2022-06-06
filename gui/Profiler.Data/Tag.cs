@@ -72,7 +72,34 @@ namespace Profiler.Data
 		{
 			if (!base.Read(reader, board))
 				return false;
-			Value = Utils.ReadVlqString(reader);
+			int len = (int)Utils.ReadVlqUInt(reader);
+			var bytes = reader.ReadBytes(len);
+			int strLen = 0;
+			for (; strLen < len; ++strLen)
+				if (bytes[strLen] == 0)
+					break;
+			int argsStart = strLen+1;
+			int argsCount = (len - argsStart)/4;
+			String st = "";
+			for (int i = 0; i < strLen; ++i)
+			{
+				if (bytes[i] == '%' && i < strLen - 1 && argsCount > 0 )
+				{
+					switch(bytes[i+1])
+					{
+						case (byte)'d': st += $"{BitConverter.ToInt32 (bytes, argsStart)}"; argsStart += 4; argsCount--; i++; break;
+						case (byte)'u': st += $"{BitConverter.ToUInt32(bytes, argsStart)}"; argsStart += 4; argsCount--; i++; break;
+						case (byte)'X': case (byte)'x':
+							st += $"{BitConverter.ToUInt32(bytes, argsStart):X}"; argsStart += 4; argsCount--; i++; break;
+						case (byte)'f': case (byte)'g':
+							st += String.Format(System.Globalization.CultureInfo.InvariantCulture, "{0}", BitConverter.ToSingle(bytes, argsStart)); argsStart += 4; argsCount--; i++; break;
+						case (byte)'%': st += "%"; i++; break;
+						default: st += (char)bytes[i]; break;
+					}
+				} else
+					st += (char)bytes[i];
+			}  
+			Value = st;
 			return true;
 		}
 
