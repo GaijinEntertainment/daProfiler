@@ -747,7 +747,13 @@ namespace Profiler.Controls
 						HoverMesh.AddRect(new Rect(ToolTipPanel.Rect.Left, ToolTipPanel.RowRect.Top, ToolTipPanel.Rect.Width, ToolTipPanel.RowRect.Height), Color.FromArgb(30, FrameHoverFrame.Color.R, FrameHoverFrame.Color.G, FrameHoverFrame.Color.B));
 				}
 	    
-				Rect textArea = new Rect(Input.MousePosition.X - maxTextSize.Width * 0.5 + ToolTipOffset.X, ToolTipPanel.Rect.Top - maxTextSize.Height + ToolTipOffset.Y, maxTextSize.Width, maxTextSize.Height);
+				double verticalPos = ToolTipPanel.Rect.Top + ToolTipOffset.Y;
+				if (verticalPos >= maxTextSize.Height)
+					verticalPos -= maxTextSize.Height;//above mouse
+				else
+					verticalPos += ToolTipPanel.Rect.Height - 2*ToolTipOffset.Y;//below mouse
+		            
+				Rect textArea = new Rect(Input.MousePosition.X - maxTextSize.Width * 0.5 + ToolTipOffset.X, verticalPos, maxTextSize.Width, maxTextSize.Height);
 				double currentY = 0;
 	            foreach (String text in texts)
 	            {

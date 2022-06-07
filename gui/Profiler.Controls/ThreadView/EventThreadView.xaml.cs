@@ -528,7 +528,19 @@ namespace Profiler.Controls
 		{
 		    EventsThreadRow.HoverNode = node;
 		    Rect rowRect = row == null ? new Rect() : new Rect(0, row.Offset, 1, row.Height);
-			ThreadViewControl.ToolTipPanel = node != null ? new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1}", node.Name, Utils.ConvertMsToString(node.Duration)), Rect = rect, RowRect = rowRect } : null;
+		    if (node == null)
+				ThreadViewControl.ToolTipPanel = null;
+			else
+			{
+				ThreadViewControl.ToolTipPanel = new ThreadViewControl.TooltipInfo { Text = String.Format("{0}   {1}", node.Name, Utils.ConvertMsToString(node.Duration)), Rect = rect, RowRect = rowRect };
+				if (node.Tags != null)
+					foreach (var tag in node.Tags)
+					{
+						if (ThreadViewControl.ToolTipPanel.Texts.Count > 8)
+							break;
+						ThreadViewControl.ToolTipPanel.Texts.Add($"{tag.Name}  {tag.FormattedValue}");
+					}
+			}
 		}
 
 		private void Row_ChartHover(Point mousePos, Rect rect, String text)
