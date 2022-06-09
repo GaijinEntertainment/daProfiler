@@ -6,6 +6,7 @@ using ICSharpCode.SharpZipLib.Zip.Compression.Streams;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.Zip.Compression;
 
 namespace Profiler.Data
 {
@@ -51,7 +52,7 @@ namespace Profiler.Data
 			{
 				Magic = OPTICK_MAGIC;
 				Version = OPTICK_VERSION;
-				Settings = Flags.IsZip;
+				Settings = Flags.IsZlib;
 			}
 
 			public bool IsValid
@@ -147,6 +148,8 @@ namespace Profiler.Data
 			header.Write(stream);
 			if (header.IsZip)
 				return new GZipStream(stream, CompressionLevel.Fastest, leaveStreamOpen);
+			else if (header.IsZlib)
+				return new DeflaterOutputStream(stream, new Deflater(Deflater.BEST_COMPRESSION));
 			else
 				return stream;
 		}
