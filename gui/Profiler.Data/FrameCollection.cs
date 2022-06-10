@@ -370,7 +370,6 @@ namespace Profiler.Data
 		{
 			System.Diagnostics.Debug.Assert(pack != null && pack.Response != null, "Invalid CallstackPack response");
 
-			Responses.Add(pack.Response);
 			Callstacks = pack;
 			for (int i = 0; i < Threads.Count; ++i)
 			{
@@ -700,8 +699,8 @@ namespace Profiler.Data
 						int id = response.Reader.ReadInt32();
 						FrameGroup group = groups[id];
 						
-						group.SamplingBoard = SamplingDescriptionPack.CreatePack(group.SamplingBoard, response);
 						group.Responses.Add(response);
+						group.SamplingBoard = SamplingDescriptionPack.CreatePack(group.SamplingBoard, response);
 
 						break;
 					}
@@ -725,6 +724,7 @@ namespace Profiler.Data
 						if (group.SamplingBoard == null)
 							group.SamplingBoard = new SamplingDescriptionPack();
 
+						group.Responses.Add(response);
 						CallstackPack pack = CallstackPack.Create(response, group.SamplingBoard, group.SysCallsBoard);
 						group.AddCallStackPack(pack);
 

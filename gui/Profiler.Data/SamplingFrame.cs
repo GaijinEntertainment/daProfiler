@@ -140,8 +140,8 @@ namespace Profiler.Data
 		public Dictionary<UInt64, SamplingDescription> Descriptions { get; private set; }
 		public SamplingDescriptionBoard()
         {
-			Modules = new List<Module>(0);
-			Descriptions = new Dictionary<UInt64, SamplingDescription>();
+			Modules = new List<Module>(8);
+			Descriptions = new Dictionary<UInt64, SamplingDescription>(1024);
 		}
 
 		public void Read(DataResponse response)
@@ -153,10 +153,7 @@ namespace Profiler.Data
 				ulong address = reader.ReadUInt64();
 				if (address == 0ul)
 					break;
-				Module module = new Module();
-				module.Address = address;
-				module.Size = reader.ReadUInt64();
-				module.Path = Utils.ReadVlqString(reader);
+				Module module = new Module() { Address = address, Size = reader.ReadUInt64(), Path = Utils.ReadVlqString(reader) };
 				Modules.Add(module);
 			}
 			if (Modules.Count != 0)
@@ -169,7 +166,8 @@ namespace Profiler.Data
 					break;
 				SamplingDescription desc = GetDescription(address);
 				desc.Read(reader, response.Version);
-				desc.Module = GetModule(address);
+				if (desc.Module == null)
+					desc.Module = GetModule(address);
 			}
 		}
 
@@ -206,13 +204,11 @@ namespace Profiler.Data
 
 	public class SamplingDescriptionPack : SamplingDescriptionBoard
 	{
-		public List<DataResponse> Responses { get; set; }
-        public SamplingDescriptionPack() { Responses = new List<DataResponse>(); }
+        public SamplingDescriptionPack() { }
 		public static SamplingDescriptionPack CreatePack(SamplingDescriptionPack cPack, DataResponse response)
 		{
 		    if (cPack == null)
 				cPack = new SamplingDescriptionPack();
-			cPack.Responses.Add(response);
 			cPack.Read(response);
 			return cPack;
 		}
