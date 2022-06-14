@@ -707,7 +707,7 @@ namespace Profiler.Controls
 				Durable activeInterval = Input.MeasureInterval.Normalize();
 				Interval pixelInterval = Scroll.TimeToPixel(activeInterval);
 				MeasureMesh.AddRect(new Rect(pixelInterval.Left, 0, pixelInterval.Width, Scroll.Height), MeasureBackground);
-				canvas.Text.Draw(new Point(pixelInterval.Left, Scroll.Height * 0.5), activeInterval.DurationF3, Colors.White, TextAlignment.Center, pixelInterval.Width);
+				canvas.Text.Draw(new Point(pixelInterval.Left, Scroll.Height * 0.5), Profiler.Data.Utils.ConvertMsToString(activeInterval.Duration), Colors.White, TextAlignment.Center, pixelInterval.Width);
 
 				MeasureMesh.Update(canvas.RenderDevice);
 				canvas.Draw(MeasureMesh);
