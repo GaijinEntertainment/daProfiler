@@ -56,10 +56,11 @@ namespace Profiler.Controls
 
 		}
 
-		public void Open()
+		public void Open(bool selectAll = true)
 		{
 			FunctionSearchBox.Focus();
-			FunctionSearchBox.SelectAll();
+			if (selectAll)
+				FunctionSearchBox.SelectAll();
 			SearchPopup.Visibility = Visibility.Visible;
 			SearchPopup.IsOpen = true;
 		}
@@ -125,7 +126,7 @@ namespace Profiler.Controls
 		private void FunctionSearchBox_MouseUp(object sender, MouseButtonEventArgs e)
 		{
 		    if (!SearchPopup.IsOpen)
-			    Open();
+			    Open(false);
 		}
 
 		private void FunctionSearchDataGrid_MouseUp(object sender, MouseButtonEventArgs e)
