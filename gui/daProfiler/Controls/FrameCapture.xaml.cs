@@ -403,10 +403,10 @@ namespace Profiler.Controls
 				{
 					FunctionStats stats = FunctionSummaryVM.Stats;
 					String info = $"{FunctionSummaryVM.Description}\t{FunctionSummaryVM.Description.Path.ShortPath}\ttotal calls={FunctionInstanceVM.Stats.Samples.Count}\n";
-					info += $"Name     :\t|\tAverage\t|\tMininum\t|\tMaximum\t|\tSDev\n";
-					info += $"Per frame:\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
+					info += $"Name      :\t|\tAverage\t|\t90th %\t|\tMininum\t|\tMaximum\t|\tSDev\n";
+					info += $"Per frame :\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.P90PerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
 					stats = FunctionThreadSummaryVM.Stats;
-					info += $"Per thread:\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
+					info += $"Per thread:\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.P90PerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
 					Clipboard.SetText(info);
 				}
 			}
