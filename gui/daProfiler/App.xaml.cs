@@ -3,7 +3,6 @@ using System.Windows;
 using System.Reflection;
 using System.IO;
 using System.Diagnostics;
-using Sentry;
 
 namespace Profiler
 {
