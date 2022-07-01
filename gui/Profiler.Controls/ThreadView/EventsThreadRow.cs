@@ -365,7 +365,7 @@ namespace Profiler.Controls
 										 color,
 										 TextAlignment.Left,
 										 intervalPx.Width - TextDrawOffset);
-						if (intervalPx.Width > (entry.Description.Name.Length + 5) * 8)//fast text width 
+						if (intervalPx.Width > (entry.Description.Name.Length + 5) * 8*RenderSettings.dpiScaleX)//fast text width 
                         {
 							canvas.Text.Draw(new Point(intervalPx.Left + TextDrawOffset, Offset + level * RenderParams.BaseHeight),
 											 Profiler.Data.Utils.ConvertMsToString(entry.Duration),

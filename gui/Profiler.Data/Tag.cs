@@ -7,13 +7,6 @@ using System.Threading.Tasks;
 
 namespace Profiler.Data
 {
-	public struct Vec3
-	{
-		public float X { get; set; }
-		public float Y { get; set; }
-		public float Z { get; set; }
-	}
-
 	public struct DrawStat
 	{
 		public UInt64 tri { get; set; }
@@ -62,7 +55,7 @@ namespace Profiler.Data
 			return true;
 		}
 
-		public override String FormattedValue => Value.ToString("N0").Replace(',', ' ');
+		public override String FormattedValue => Value.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(',', ' ');
 	}
 
 	public class TagString : Tag

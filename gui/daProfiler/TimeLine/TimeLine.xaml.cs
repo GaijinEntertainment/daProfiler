@@ -101,14 +101,14 @@ namespace Profiler
 				mesh.Dispose();
 			DynamicMesh builder = surface.CreateMesh();
 			builder.Projection = Mesh.ProjectionType.Pixel;
-			builder.AddRect(new Rect(0.0, 0, FrameWidth, ScrollSize.Height), solidColor);
+			builder.AddRect(new Rect(0.0, 0, FrameWidth* RenderSettings.dpiScaleX, ScrollSize.Height), solidColor);
 
 			if (frameColor.A != 0)
 			{
 				builder.AddRect(new Rect(0, 0, FrameWidth, 1), frameColor);
-				builder.AddRect(new Rect(0, ScrollSize.Height - 1, FrameWidth, 1), frameColor);
+				builder.AddRect(new Rect(0, ScrollSize.Height - 1, FrameWidth* RenderSettings.dpiScaleX, 1), frameColor);
 				builder.AddRect(new Rect(0, 0, 1, ScrollSize.Height), frameColor);
-				builder.AddRect(new Rect(FrameWidth - 1, 0, 1, ScrollSize.Height), frameColor);
+				builder.AddRect(new Rect(FrameWidth* RenderSettings.dpiScaleX - 1, 0, 1, ScrollSize.Height), frameColor);
 			}
 			mesh = builder.Freeze(surface.RenderDevice);
 			mesh.UseAlpha = true;
@@ -193,7 +193,7 @@ namespace Profiler
 			}
 			else
 			{
-				double clickAt = e.Location.X + (double)scrollLeft;
+				double clickAt = (e.Location.X + (double)scrollLeft)/RenderSettings.dpiScaleX;
 				int frameAt = (int)(clickAt / (double)FrameWidthWithSpacing);
 				if (frameAt < 0 || frameAt >= frames.Count)
 				{
@@ -243,7 +243,7 @@ namespace Profiler
 		private void MouseClickLeft(System.Windows.Forms.MouseEventArgs args)
 		{
 			System.Drawing.Point e = new System.Drawing.Point(args.X, args.Y);
-			double clickAt = args.X + (double)scrollLeft;
+			double clickAt = (args.X + (double)scrollLeft)/RenderSettings.dpiScaleX;
 			int frameAt = (int)(clickAt / (double)FrameWidthWithSpacing);
 			if (frameAt < 0 || frameAt >= frames.Count)
             {
@@ -272,17 +272,17 @@ namespace Profiler
 		private void RenderCanvas_MouseWheel(object sender, System.Windows.Forms.MouseEventArgs e){}//todo zoom
 		private void UpdateBar()
 		{
-			double w = Math.Max(FullWidth, ScrollSize.Width);
+			double w = Math.Max(FullWidth* RenderSettings.dpiScaleX, ScrollSize.Width);
 			double normalSize = ScrollSize.Width / w;
 			scrollBar.Maximum = 1.0 - normalSize;
 			scrollBar.ViewportSize = normalSize;
 			ScrollArea.HorizontalScrollBarVisibility = w > ScrollSize.Width ? ScrollBarVisibility.Visible : ScrollBarVisibility.Auto;
-			scrollLeft = Math.Max(Math.Min(scrollLeft, FullWidth - ScrollSize.Width * 0.8), 0);
+			scrollLeft = Math.Max(Math.Min(scrollLeft, FullWidth* RenderSettings.dpiScaleX - ScrollSize.Width * 0.8), 0);
 			scrollBar.Value = scrollLeft / w;
 		}
 		private void GetScrollBar()
         {
-			double w = Math.Max(FullWidth, ScrollSize.Width);
+			double w = Math.Max(FullWidth * RenderSettings.dpiScaleX, ScrollSize.Width);
 			scrollLeft = scrollBar.Value * w;
 			UpdateSurface();
 		}
@@ -345,9 +345,9 @@ namespace Profiler
 				{
 					if (framesCount != 0)
 					{
-						builder[fPack].AddRect(new Rect(currentRectLeft - FrameSpace*0.5, 0, 1, 100000), Colors.Orange);
-						backBuilder.AddRect(new Rect(firstGroupIndex * FrameWidthWithSpacing + FrameSpace*0.5, 0,
-														(framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace, 100000),
+						builder[fPack].AddRect(new Rect((currentRectLeft - FrameSpace-0.5) *RenderSettings.dpiScaleX, 0, 1*RenderSettings.dpiScaleX, 100000), Colors.Orange);
+						backBuilder.AddRect(new Rect((firstGroupIndex * FrameWidthWithSpacing + FrameSpace*0.5) * RenderSettings.dpiScaleX, 0,
+														((framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace) * RenderSettings.dpiScaleX, 100000),
 							alternateBoard ? boardColor : alternateBoardColor);
 						alternateBoard = !alternateBoard;
 					}
@@ -359,14 +359,14 @@ namespace Profiler
 				Color color = frameTime > MaxPresentableFrameDuration ? ((framesCount & 1) == 0 ? badColor : alternateBadColor) :
 					((framesCount & 1) == 0 ? barColor : alternateBarColor);
 
-				builder[fPack].AddRect(new Rect(currentRectLeft, 0, FrameWidth, frameTime), color);
+				builder[fPack].AddRect(new Rect(currentRectLeft * RenderSettings.dpiScaleX, 0, FrameWidth * RenderSettings.dpiScaleX, frameTime), color);
 				currentRectLeft += FrameWidthWithSpacing;
 				++framesCount;
 			}
 			if (framesCount != 0)
 			{
-				backBuilder.AddRect(new Rect(firstGroupIndex * FrameWidthWithSpacing + FrameSpace * 0.5, 0,
-												(framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace, 100000),
+				backBuilder.AddRect(new Rect((firstGroupIndex * FrameWidthWithSpacing + FrameSpace * 0.5) * RenderSettings.dpiScaleX, 0,
+												((framesCount - firstGroupIndex) * FrameWidthWithSpacing + FrameSpace) * RenderSettings.dpiScaleX, 100000),
 					alternateBoard ? boardColor : alternateBoardColor);
 				alternateBoard = !alternateBoard;
 			}
@@ -403,7 +403,7 @@ namespace Profiler
 			if (layer == DirectXCanvas.Layer.Background)
 			{
 
-				int firstFrame = Math.Max(0, (int)(scrollPos / FrameWidthWithSpacing));
+				int firstFrame = Math.Max(0, (int)(scrollPos / RenderSettings.dpiScaleX / FrameWidthWithSpacing));
 				int lastFrame = Math.Min(frames.Count-1, firstFrame + 1 + ((int)(surface.ActualWidth / FrameWidthWithSpacing)));
 				if (BoardsMesh != null)
 				{
@@ -424,12 +424,12 @@ namespace Profiler
 
 				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
 				{
-					HoverFrameMeshBackground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace), frames[HoverFrameAt].Duration / maxDisplayableFrame);
+					HoverFrameMeshBackground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace)*RenderSettings.dpiScaleX, frames[HoverFrameAt].Duration / maxDisplayableFrame);
 					canvas.Draw(HoverFrameMeshBackground);
 				}
 
-				double currentFrameTextAt = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing / 2 - scrollPos;
-				for (int frame = firstFrame; frame <= lastFrame; ++frame, currentFrameTextAt += FrameWidthWithSpacing)
+				double currentFrameTextAt = (firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing / 2) * RenderSettings.dpiScaleX - scrollPos;
+				for (int frame = firstFrame; frame <= lastFrame; ++frame, currentFrameTextAt += FrameWidthWithSpacing* RenderSettings.dpiScaleX)
 				{
 					double duration = frames[frame].Duration;
 					Color textColor = duration < 16.6*fpsMul ? Epic : duration < 33.3*fpsMul ? Good : duration < 20*fpsMul ? Okay : Poor;
@@ -437,11 +437,11 @@ namespace Profiler
 					Size sz = canvas.Text.Measure(str);
 					double centerAt = currentFrameTextAt - sz.Height / 2;
 					//shadow
-					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point(centerAt+1, canvas.Height - 4-1),
+					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point((centerAt+1), (canvas.Height - 4-1) * RenderSettings.dpiScaleY),
 									 str,
 									 Colors.Black,
 									 TextAlignment.Left);
-					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point(centerAt , canvas.Height - 4),
+					canvas.Text.DrawVertical(DirectX.TextManager.VerticalDirection.CCW, new Point(centerAt, (canvas.Height - 4) * RenderSettings.dpiScaleY),
 									 str,
 									 textColor,
 									 TextAlignment.Left);
@@ -451,7 +451,7 @@ namespace Profiler
             {
 				if (HoverFrameAt >= 0 && HoverFrameAt < frames.Count)
 				{
-					HoverFrameMeshForeground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace));
+					HoverFrameMeshForeground.WorldTransform = GetOffsetMatrix(scrollPos - (HoverFrameAt * FrameWidthWithSpacing + FrameSpace) * RenderSettings.dpiScaleX);
 					canvas.Draw(HoverFrameMeshForeground);
 				}
 				if (SelectedFrameAt >= 0 && SelectedFrameAt < frames.Count && ThreadViewTime != null && ThreadViewTime.IsValid)
@@ -484,11 +484,11 @@ namespace Profiler
 						Entry firstEntry = ((EventFrame)frames[firstFrame]).Entries[0], lastEntry = ((EventFrame)frames[lastFrame]).Entries[0];
 						double offsetFirst = ((double)ThreadViewTime.Start- firstEntry.Start) / (firstEntry.Finish - firstEntry.Start);
 						double offsetLast = ((double)ThreadViewTime.Finish - lastEntry.Start) / (lastEntry.Finish - lastEntry.Start);
-						double start = firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetFirst;
-						double end = lastFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetLast;
+						double start = (firstFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetFirst)* RenderSettings.dpiScaleX;
+						double end = (lastFrame * FrameWidthWithSpacing + FrameWidthWithSpacing * offsetLast)*RenderSettings.dpiScaleX;
 						double sz = end - start;
 						ThreadViewTimeLineMesh.WorldTransform =
-							new Matrix(sz / FrameWidth, 0.0,
+							new Matrix(sz / FrameWidth/ RenderSettings.dpiScaleX, 0.0,
 									   0.0, -1.0,
 									   -scrollPos + start, ScrollSize.Height);//height
 						canvas.Draw(ThreadViewTimeLineMesh);

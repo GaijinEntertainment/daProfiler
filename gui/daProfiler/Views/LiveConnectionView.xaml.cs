@@ -49,7 +49,6 @@ namespace Profiler.Views
 			{
 				LiveMeshForeground = surface.CreateMesh();
 				LiveMeshForeground.Projection = Mesh.ProjectionType.Pixel;
-				LiveMeshForeground.Geometry = Mesh.GeometryType.Lines;
 			}
 		}
 
@@ -59,7 +58,7 @@ namespace Profiler.Views
 			if (framesToDraw > 0)
 			{
 				InitLiveMesh();
-				double width = surface.ActualWidth * RenderSettings.dpiScaleX, height = surface.ActualHeight * RenderSettings.dpiScaleY-4;
+				double width = surface.ActualWidth * RenderSettings.dpiScaleX, height = (surface.ActualHeight-4) * RenderSettings.dpiScaleY;
 				int startFrame = Math.Max(0, liveFrames.Count - framesToDraw);
 				double avg = 0, maxDuration, minDuration;
 				maxDuration = minDuration = liveFrames[startFrame];
@@ -79,20 +78,21 @@ namespace Profiler.Views
 				std = Math.Sqrt(variance);
 				double scaleDuration = Math.Max(0.0001, avg * 2.0);
 
-				double livePos = 2;
-				double at = livePos;
-				for (int i = startFrame, e = i + framesToDraw; i < e; ++i, at += 1)
+				double rw = RenderSettings.dpiScaleY;
+				double livePos = 2*rw, at = livePos;
+				for (int i = startFrame, e = i + framesToDraw; i < e; ++i, at += rw)
 				{
 					double time = liveFrames[i];
 					double h = height*liveFrames[i] / scaleDuration;
-					LiveMeshForeground.AddLine(new Point(at, height - h), new Point(at, height), time < scaleDuration ? Colors.Green : Colors.Red);
+					LiveMeshForeground.AddRect(new Rect(at, height - h, rw, h), time < scaleDuration ? Colors.Green : Colors.Red);
 				}
-				canvas.Text.Draw(new Point(livePos, height - 28), FormattableString.Invariant($"frames: {current_available:000}"), Colors.White, TextAlignment.Left, width);
-				int pos = 2;
-				canvas.Text.Draw(new Point(livePos + pos, height - 14), FormattableString.Invariant($"avg: {avg:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8;
-				canvas.Text.Draw(new Point(livePos + pos, height - 14), FormattableString.Invariant($"min: {minDuration:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8;
-				canvas.Text.Draw(new Point(livePos + pos, height - 14), FormattableString.Invariant($"max: {maxDuration:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8;
-				canvas.Text.Draw(new Point(livePos + pos, height - 14), FormattableString.Invariant($"std: {std:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8;
+				double textSz = 14*RenderSettings.dpiScaleY;
+				canvas.Text.Draw(new Point(livePos, height - textSz*2), FormattableString.Invariant($"frames: {current_available:000}"), Colors.White, TextAlignment.Left, width);
+				double pos = 2*rw;
+				canvas.Text.Draw(new Point(livePos + pos, height - textSz), FormattableString.Invariant($"avg: {avg:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8*rw;
+				canvas.Text.Draw(new Point(livePos + pos, height - textSz), FormattableString.Invariant($"min: {minDuration:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8*rw;
+				canvas.Text.Draw(new Point(livePos + pos, height - textSz), FormattableString.Invariant($"max: {maxDuration:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8*rw;
+				canvas.Text.Draw(new Point(livePos + pos, height - textSz), FormattableString.Invariant($"std: {std:0.#}"), Colors.White, TextAlignment.Left, width - pos); pos += 8 * 8*rw;
 			}
 			if (LiveMeshForeground == null)
 				return;
