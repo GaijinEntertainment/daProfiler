@@ -26,10 +26,10 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" TextBlock.FontWeight="Medium" HorizontalAlignment="Right">
                 <!-- per-call information, async bindings since these getters are slow -->
+                <TextBlock Text="{Binding Stats.AvgTotalPerCall, StringFormat=Avg {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightBlue" ToolTip="Average Time (single call)" />
+                <TextBlock Text="{Binding Stats.P90PerCall, StringFormat=P90 {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightBlue" ToolTip="Average Time (single call)" />
                 <TextBlock Text="{Binding Stats.MinPerCall, StringFormat=Min {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightGray" ToolTip="Fastest Time (single call)" />
                 <TextBlock Text="{Binding Stats.MaxPerCall, StringFormat=Max {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightGray" ToolTip="Slowest Time (single call)" />
-                <TextBlock Text="{Binding Stats.P90PerCall, StringFormat=P90 {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightBlue" ToolTip="Average Time (single call)" />
-                <TextBlock Text="{Binding Stats.AvgTotalPerCall, StringFormat=Avg {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="LightBlue" ToolTip="Average Time (single call)" />
                 <TextBlock Text="{Binding Stats.StdDevPerCall, StringFormat=SD {0}, Converter={StaticResource MsToStringConverter}, Mode=OneWay, IsAsync=True}" Margin="6,0,0,0" Foreground="BurlyWood" ToolTip="Standard Deviation (single call)" />
             </StackPanel>
         </StackPanel>
