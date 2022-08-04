@@ -71,8 +71,13 @@
                     <Rectangle Width="1" Height="15" Stroke="Gray" Margin="0,0,5,0" />
                 </StackPanel>
                 <Controls:FunctionSearch x:Name="FunctionSearchControl" Margin="1,0" Width="230" />
+                <!--
                 <ToggleButton x:Name="ShowSyncWorkButton" ToolTip="Show Work" Height="{StaticResource DefaultButtonSize}" Margin="0,0,1,0" Click="ShowSyncWorkButton_Click">
                     <TextBlock Text="SHOW CPU CORES" Margin="0,-3,0,0" Padding="0" />
+                </ToggleButton>
+                -->
+                <ToggleButton x:Name="ShowTagLinesButton" ToolTip="Show Work" Height="{StaticResource DefaultButtonSize}" Margin="0,0,1,0" Click="ShowTagLinesButton_Click">
+                    <TextBlock Text="SHOW TAG LINES" Margin="0,-3,0,0" Padding="0" />
                 </ToggleButton>
                 <ToggleButton x:Name="ShowCallstacksButton" Height="{StaticResource DefaultButtonSize}" MinHeight="{StaticResource DefaultButtonSize}" Margin="0" Checked="ShowCallstacksButton_Checked" Unchecked="ShowCallstacksButton_Unchecked">
                     <ToggleButton.Content>
@@ -157,6 +162,18 @@
                                 </DataGrid>
                             </Expander>
                         </DataTemplate>
+
+                        <DataTemplate DataType="{x:Type Profiler_Data:Tag}">
+                            <Grid Margin="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Label Grid.Column="0" Content="{Binding Name, Mode=OneTime}" Margin="2" />
+                                <Label Grid.Column="1" Content="{Binding FormattedValue, Mode=OneTime}" Margin="2" />
+                            </Grid>
+                        </DataTemplate>
+
                         <DataTemplate DataType="{x:Type Profiler_Data:Callstack}">
                             <Expander Header="Callstack" IsExpanded="True" FontWeight="Bold">
                                 <Expander.Resources>
@@ -185,6 +202,7 @@
                                 </DataGrid>
                             </Expander>
                         </DataTemplate>
+
                     </ItemsControl.Resources>
                 </ItemsControl>
             </Border>

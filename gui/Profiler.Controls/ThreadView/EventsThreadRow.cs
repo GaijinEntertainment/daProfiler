@@ -125,6 +125,7 @@ namespace Profiler.Controls
 
 		const float NodeGradientShade = 0.85f;
 		public double DepthToHeight(double level) { return level / MaxDepth; }
+		public static bool ColorIsBlack(Color c) { return (c.R | c.G | c.A | c.B) == 0; }
 
 		void BuildMeshNode(DirectX.DynamicMesh builder, Durable unitTimeSlice, EventNode node, int level, Color parentColor)
 		{
@@ -381,7 +382,7 @@ namespace Profiler.Controls
 
 			if (layer == DirectXCanvas.Layer.Foreground)
 			{
-				if (CallstackMeshPolys != null && CallstackMeshLines != null && (scroll.DrawCallstacks != 0 || scroll.DrawDataTags))
+				if (CallstackMeshPolys != null && CallstackMeshLines != null && (scroll.DrawDataTags || scroll.DrawCallstacks != 0))
 				{
 					double width = CallstackMarkerRadius;
 					double height = CallstackMarkerRadius;
@@ -406,14 +407,20 @@ namespace Profiler.Controls
 						});
 					}
 
-					if (scroll.DrawDataTags && EventData.TagsPack != null)
+					if (EventData.TagsPack != null && scroll.DrawDataTags)
 					{
 						Data.Utils.ForEachInsideInterval(EventData.TagsPack.Tags, scroll.ViewTime, tag =>
 						{
+						    bool isLine = !ColorIsBlack(tag.Description.Color);
+							if (!isLine)
+								return;
 							double center = scroll.TimeToPixel(tag);
 							Point[] points = new Point[] { new Point(center - width, Offset), new Point(center + width, Offset), new Point(center, offset) };
-							CallstackMeshPolys.AddTri(points, CallstackColor);
+							Color color = isLine ? tag.Description.Color : CallstackColor;
+							CallstackMeshPolys.AddTri(points, color);
 							CallstackMeshLines.AddTri(points, Colors.Black);
+							if (isLine)
+								CallstackMeshLines.AddLine(new Point(center, 0), new Point(center, 100000), color);
 						});
 					}
 
@@ -696,6 +703,23 @@ namespace Profiler.Controls
 					}
 				}
 			}
+
+
+			if (EventData.TagsPack != null && scroll.DrawDataTags)
+			{
+				int startIndex = Data.Utils.BinarySearchClosestIndex(EventData.TagsPack.Tags, tick.Start);
+
+				for (int i = startIndex; (i <= startIndex + 1) && (i < EventData.TagsPack.Tags.Count) && (i != -1); ++i)
+				{
+					double pixelPos = scroll.TimeToPixel(EventData.TagsPack.Tags[i]);
+					if (Math.Abs(pixelPos - point.X) < CallstackMarkerRadius * 1.2 && !ColorIsBlack(EventData.TagsPack.Tags[i].Description.Color))
+					{
+						dataContext.Add(EventData.TagsPack.Tags[i]);
+						break;
+					}
+				}
+			}
+
 		}
 
 		public override void OnMouseClick(Point point, ThreadScroll scroll)

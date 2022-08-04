@@ -565,7 +565,13 @@ namespace Profiler.Controls
 
 		private void ShowSyncWorkButton_Click(object sender, RoutedEventArgs e)
 		{
-			ThreadViewControl.Scroll.SyncDraw = ShowSyncWorkButton.IsChecked.Value ? ThreadScroll.SyncDrawType.Work : ThreadScroll.SyncDrawType.Wait;
+			//ThreadViewControl.Scroll.SyncDraw = ShowSyncWorkButton.IsChecked.Value ? ThreadScroll.SyncDrawType.Work : ThreadScroll.SyncDrawType.Wait;
+			//ThreadViewControl.UpdateSurface();
+		}
+
+		private void ShowTagLinesButton_Click(object sender, RoutedEventArgs e)
+		{
+			ThreadViewControl.Scroll.DrawDataTags = ShowTagLinesButton.IsChecked.Value;
 			ThreadViewControl.UpdateSurface();
 		}
 
