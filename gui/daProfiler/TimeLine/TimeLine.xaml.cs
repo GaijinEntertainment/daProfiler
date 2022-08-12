@@ -737,6 +737,15 @@ namespace Profiler
 					    	liveFramesView.process(response.Reader);
 						break;
 
+					case DataResponse.Type.Plugins:
+					{
+						int count = response.Reader.ReadInt32();
+						Dictionary<String, bool> plugins = new Dictionary<String, bool>(count);
+						for (int i = 0; i < count; ++i)
+						  plugins[Data.Utils.ReadBinaryString(response.Reader)] = response.Reader.ReadBoolean();
+						RaiseEvent(new UpdatePluginsEventArgs(plugins));
+						break;
+					}
 					case DataResponse.Type.SettingsPack:
 					    CaptureSettings settings = new CaptureSettings();
 					    settings.Read(response.Reader);
@@ -898,6 +907,16 @@ namespace Profiler
 			}
 		}
 
+		public class UpdatePluginsEventArgs : RoutedEventArgs
+		{
+			public Dictionary<String, bool> Plugins { get; set; }
+
+			public UpdatePluginsEventArgs(Dictionary<String, bool> plugins) : base(UpdatePluginsEvent)
+			{
+				Plugins = plugins;
+			}
+		}
+
 		public class StopCaptureEventArgs : RoutedEventArgs
 		{
 			public StopCaptureEventArgs() : base(StopCaptureEvent)
@@ -909,12 +928,14 @@ namespace Profiler
 		public delegate void UpdateStatusEventHandler(object sender, UpdateStatusEventArgs e);
 		public delegate void NewConnectionEventHandler(object sender, NewConnectionEventArgs e);
 		public delegate void UpdateSettingsEventHandler(object sender, UpdateSettingsEventArgs e);
+		public delegate void UpdatePluginsEventHandler(object sender, UpdatePluginsEventArgs e);
 		public delegate void StopCaptureEventHandler(object sender, StopCaptureEventArgs e);
 
 		public static readonly RoutedEvent ShowWarningEvent = EventManager.RegisterRoutedEvent("ShowWarning", RoutingStrategy.Bubble, typeof(ShowWarningEventArgs), typeof(TimeLine));
 		public static readonly RoutedEvent UpdateStatusEvent = EventManager.RegisterRoutedEvent("UpdateStatus", RoutingStrategy.Bubble, typeof(UpdateStatusEventArgs), typeof(TimeLine));
 		public static readonly RoutedEvent NewConnectionEvent = EventManager.RegisterRoutedEvent("NewConnection", RoutingStrategy.Bubble, typeof(NewConnectionEventHandler), typeof(TimeLine));
 		public static readonly RoutedEvent UpdateSettingsEvent = EventManager.RegisterRoutedEvent("UpdateSettings", RoutingStrategy.Bubble, typeof(UpdateSettingsEventHandler), typeof(TimeLine));
+		public static readonly RoutedEvent UpdatePluginsEvent = EventManager.RegisterRoutedEvent("UpdatePlugins", RoutingStrategy.Bubble, typeof(UpdatePluginsEventHandler), typeof(TimeLine));
 		public static readonly RoutedEvent StopCaptureEvent = EventManager.RegisterRoutedEvent("StopCapture", RoutingStrategy.Bubble, typeof(StopCaptureEventHandler), typeof(TimeLine));
 
 		public event RoutedEventHandler FocusFrame
@@ -945,6 +966,12 @@ namespace Profiler
 		{
 			add { AddHandler(UpdateSettingsEvent, value); }
 			remove { RemoveHandler(UpdateSettingsEvent, value); }
+		}
+
+		public event RoutedEventHandler UpdatePlugins
+		{
+			add { AddHandler(UpdatePluginsEvent, value); }
+			remove { RemoveHandler(UpdatePluginsEvent, value); }
 		}
 
 		public event StopCaptureEventHandler StopCapture
@@ -1070,6 +1097,11 @@ namespace Profiler
 		public void SendSettings(CaptureSettings settings)
 		{
 			Task.Run(() => { ProfilerClient.Get().SendMessage(new SetSettingsMessage() {Settings = settings}, false); });
+		}
+
+		public void SendPlugins(Dictionary<String, bool> plugins)
+		{
+			Task.Run(() => { ProfilerClient.Get().SendMessage(new PluginCommandMessage() { pluginCommands = plugins}, false); });
 		}
 
 		public void Connect(IPAddress address, UInt16 port)

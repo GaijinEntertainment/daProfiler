@@ -112,6 +112,8 @@ namespace Profiler.ViewModels
 			new Flag("All Processes", "Collects information about other processes (thread pre-emption) (kernel)", Mode.ETW_PROCESSES, false),
 		});
 
+		public ObservableCollection<Flag> PluginsSettings { get; set; } = new ObservableCollection<Flag>();
+
 		public Array SamplingFrequencyList
 		{
 			get {
@@ -243,6 +245,9 @@ namespace Profiler.ViewModels
 
 			foreach (Flag flag in FlagSettings)
 				flag.Notifier = this;
+
+			foreach (Flag flag in PluginsSettings)
+				flag.Notifier = this;
 		}
 
 		public CaptureSettings GetSettings()
@@ -265,6 +270,46 @@ namespace Profiler.ViewModels
 			settings.ProfileSizeLimitMb  = (uint)(ProfileSizeLimitMb.Value);
 
 			return settings;
+		}
+		public Dictionary<String,bool> GetPlugins()
+		{
+			Dictionary<String, bool> plugins = new Dictionary<String, bool>();
+
+			foreach (Flag flag in PluginsSettings)
+				plugins[flag.Name] = flag.IsEnabled;
+
+			return plugins;
+		}
+
+		public void SetPlugins(Dictionary<String, bool> plugins)
+		{
+			HashSet<String> flagsPresent = new HashSet<string>();
+			for (int i = PluginsSettings.Count - 1; i >= 0; --i)
+			{
+				Flag flag = PluginsSettings[i];
+				if (!plugins.ContainsKey(flag.Name))
+					PluginsSettings.RemoveAt(i);
+				else
+					flagsPresent.Add(flag.Name);
+			}
+			foreach (Flag flag in PluginsSettings)
+			{
+				if (plugins.ContainsKey(flag.Name))
+				{
+					bool val; plugins.TryGetValue(flag.Name, out val);
+					flag.IsEnabled = val;
+				}
+			}
+			foreach (KeyValuePair<String, bool> p in plugins)
+			{
+				if (!flagsPresent.Contains(p.Key))
+				{
+					Flag flag = new Flag(p.Key, p.Key, Mode.OFF, p.Value);
+					flag.Notifier = this;
+					PluginsSettings.Add(flag);
+				}
+			}
+
 		}
 
 		public void SetSettings(CaptureSettings settings)

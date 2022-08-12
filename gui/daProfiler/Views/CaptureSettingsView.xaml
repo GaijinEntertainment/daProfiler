@@ -30,6 +30,19 @@
             </ItemsControl>
         </GroupBox>
 
+        <GroupBox MahApps:ControlsHelper.ContentCharacterCasing="Normal" Header="Plugins" Margin="0,0,0,2">
+            <ItemsControl ItemsSource="{Binding PluginsSettings}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding IsEnabled}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" ToolTip="{Binding Description}" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </GroupBox>
+
         <GroupBox MahApps:ControlsHelper.ContentCharacterCasing="Normal" Header="Sampling Frequency (Hz)" Margin="0,0,0,2">
             <StackPanel Orientation="Vertical" Margin="1">
                 <ComboBox ItemsSource="{Binding SamplingFrequencyList, Mode=OneTime}" IsEditable="True" SelectedItem="{Binding SamplingFrequencyHz}" ToolTip="Collect callstacks at specified frequency">

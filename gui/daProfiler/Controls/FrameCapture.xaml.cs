@@ -37,6 +37,7 @@ namespace Profiler.Controls
 		void INotifier.Notify()
         {
 			timeLine.SendSettings(CaptureSettingsVM.GetSettings());
+			timeLine.SendPlugins(CaptureSettingsVM.GetPlugins());
 		}
 
 		protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -90,6 +91,7 @@ namespace Profiler.Controls
 
 			timeLine.NewConnection += TimeLine_NewConnection;
 			timeLine.UpdateSettings += TimeLine_UpdateSettings;
+			timeLine.UpdatePlugins += TimeLine_UpdatePlugins;
 			timeLine.StopCapture += TimeLine_StopCapture;
 			timeLine.ShowWarning += TimeLine_ShowWarning;
 			timeLine.UpdateStatus += TimeLine_UpdateStatus;
@@ -191,6 +193,12 @@ namespace Profiler.Controls
 		{
 			TimeLine.UpdateSettingsEventArgs args = e as TimeLine.UpdateSettingsEventArgs;
             CaptureSettingsVM?.SetSettings(args.Settings);
+        }
+
+		private void TimeLine_UpdatePlugins(object sender, RoutedEventArgs e)
+		{
+			TimeLine.UpdatePluginsEventArgs args = e as TimeLine.UpdatePluginsEventArgs;
+			CaptureSettingsVM?.SetPlugins(args.Plugins);
         }
 
 		private void OpenFrame(object source, FocusFrameEventArgs args)

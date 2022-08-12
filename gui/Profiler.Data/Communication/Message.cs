@@ -39,7 +39,7 @@ namespace Profiler.Data
 			SettingsPack,
 			Heartbeat,
 			ReportLiveFrameTime,
-			Reserved_4,
+			Plugins,
 
 			FiberSynchronizationData = 1 << 8,
 			SyscallPack,
@@ -164,6 +164,7 @@ namespace Profiler.Data
 		TurnSampling,
 		CancelProfiling,
 		Heartbeat,
+		PluginCommand,
 		COUNT
 	}
 
@@ -190,6 +191,25 @@ namespace Profiler.Data
 		public override Int16 GetMessageType()
 		{
 			return (Int32)MessageType.Heartbeat;
+		}
+	}
+	public class PluginCommandMessage : Message
+	{
+		public Dictionary<String, bool> pluginCommands;
+		public override Int16 GetMessageType()
+		{
+			return (Int32)MessageType.PluginCommand;
+		}
+		public override void Write(BinaryWriter writer)
+		{
+			base.Write(writer);
+			writer.Write(pluginCommands.Count);
+			foreach (KeyValuePair<String,bool> kv in pluginCommands)
+			{
+				Utils.WriteBinaryString(writer, kv.Key);
+				writer.Write(kv.Value);
+			}
+
 		}
 	}
 
