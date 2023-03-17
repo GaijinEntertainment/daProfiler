@@ -75,6 +75,7 @@ namespace Profiler.Controls
 					double maxDuration = 0;
 					EventFrame maxFrame = null;
 					Entry maxEntry = null;
+					EventNode maxNode = null;
 
 					foreach (ThreadData thread in Group.Threads)
 					{
@@ -87,18 +88,22 @@ namespace Profiler.Controls
 								{
 									if (entry.Duration > maxDuration)
 									{
-										maxFrame = frame;
-										maxEntry = entry;
-										maxDuration = entry.Duration;
+										EventNode node = frame.Root.FindNode(entry);
+										if (node != null)
+										{
+											maxFrame = frame;
+											maxEntry = entry;
+											maxDuration = entry.Duration;
+											maxNode = node;
+										}
 									}
 								}
 							}
 						}
 					}
 
-					if (maxFrame != null && maxEntry != null)
+					if (maxFrame != null && maxNode != null)
 					{
-						EventNode maxNode = maxFrame.Root.FindNode(maxEntry);
 						RaiseEvent(new FocusFrameEventArgs(GlobalEvents.FocusFrameEvent, new EventFrame(maxFrame, maxNode), null));
 					}
 				}
