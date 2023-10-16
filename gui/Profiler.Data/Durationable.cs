@@ -71,24 +71,26 @@ namespace Profiler.Data
 			return settings.TicksToMs * duration;
 		}
 
+		private const long timeErrorCorrection = 1;
+
 		public bool Intersect(long value)
 		{
-			return Start <= value && value <= Finish;
+			return Start - timeErrorCorrection <= value && value <= Finish + timeErrorCorrection;
 		}
 
 		public bool Intersect(IDurable other)
 		{
-			return Start <= other.Finish && Finish >= other.Start;
+			return Start - timeErrorCorrection <= other.Finish && Finish + timeErrorCorrection >= other.Start;
 		}
 
 		public bool Contains(IDurable other)
 		{
-			return Start <= other.Start && Finish >= other.Finish;
+			return Start - timeErrorCorrection <= other.Start && Finish + timeErrorCorrection >= other.Finish;
 		}
 
 		public bool Within(IDurable other)
 		{
-			return Start >= other.Start && Finish <= other.Finish;
+			return Start + timeErrorCorrection >= other.Start && Finish - timeErrorCorrection <= other.Finish;
 		}
 
 		public double Overlap(Durable entry)
