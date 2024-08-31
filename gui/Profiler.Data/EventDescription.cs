@@ -46,34 +46,16 @@ namespace Profiler.Data
 		public Color ForceColor
 		{
 			get
-			{
-				if (forceColor.A == 0)
-				{
-					if (Color.A > 0)
-					{
-						forceColor = Color;
-					}
-					else
-					{
-						forceColor = GenerateRandomColor(FullName);
-					}
-				}
-				return forceColor;
-			}
-		}
-		private Brush forceBrush;
-		public Brush ForceBrush
-		{
-			get
-			{
-				if (forceBrush == null)
-				{
-					forceBrush = new SolidColorBrush(ForceColor);
-					forceBrush.Freeze();
-				}
-				return forceBrush;
-			}
-		}
+            {
+                if (default != Color)
+                    return Color;
+
+                if (default == forceColor)
+                    forceColor = GenerateRandomColor(FullName);
+
+                return forceColor;
+            }
+        }
 		public Brush Brush { get; private set; }
 
 		public bool IsSleep { get { return (Flags&DescFlags.IS_WAIT) != 0; } }//Color == Colors.White
