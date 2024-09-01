@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Profiler.Data
 {
+	public enum CompressionAlgorithm { UNCOMPRESSED = 0, ZLIB_ALGO = 1, ZSTD_ALGO = 2};
 	public static class Utils
 	{
 		public static String ConvertMsToString(double duration)

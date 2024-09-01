@@ -757,13 +757,14 @@ namespace Profiler
 						break;
 
 					case DataResponse.Type.Handshake:
-						TracerStatus status = (TracerStatus)response.Reader.ReadUInt32();
+						TracerStatus status = (TracerStatus)response.Reader.ReadUInt16();//skip
 
 						KeyValuePair<string, string> warning;
 						if (statusToError.TryGetValue(status, out warning))
 						{
 							RaiseEvent(new ShowWarningEventArgs(warning.Key, warning.Value));
 						}
+						uint compressionAlgo = response.Reader.ReadUInt16();
 
 						Platform.Connection connection = new Platform.Connection() {
 							Address = response.Source.Address.ToString(),
@@ -1109,7 +1110,10 @@ namespace Profiler
             ProfilerClient.Get().IpAddress = address;
             ProfilerClient.Get().Port = port;
 
-			Task.Run(() => { ProfilerClient.Get().SendMessage(new ConnectMessage() , true); });
+			Task.Run(() => {
+				ProfilerClient.Get().SendMessage((Message)new ConnectedCompressionMessage(), true);
+				//isCompressionSupportedOnClient ? (Message)new ConnectedCompressionMessage() : (Message)new ConnectMessage(), true);
+            });
 		}
 	}
 

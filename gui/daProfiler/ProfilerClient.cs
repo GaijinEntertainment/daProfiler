@@ -10,6 +10,7 @@ using System.IO;
 using System.Windows;
 using System.Runtime.CompilerServices;
 using System.Diagnostics;
+using System.IO.Compression;
 
 namespace Profiler
 {
@@ -25,10 +26,13 @@ namespace Profiler
 
 		private void Reconnect(bool reuse_socket = true)
 		{
+			if (zlibStream != null)
+				reuse_socket = false;
 			if (client.Client.Connected)
 				client.Client.Disconnect(reuse_socket);
 
 			client.Close();
+			zlibStream = null;
 			client = new TcpClient();
 		}
 
@@ -61,23 +65,31 @@ namespace Profiler
 		public static ProfilerClient Get() { return profilerClient; }
 
 		TcpClient client = new TcpClient();
+        System.IO.Compression.DeflateStream zlibStream;
 		#region SocketWork
 
 		public DataResponse RecieveMessage()
 		{
 			try
 			{
-				NetworkStream stream = null;
+				Stream stream = null;
 
 				lock (criticalSection)
 				{
 					if (!client.Connected)
-						return null;
+					{
+						zlibStream = null;
+                        return null;
+					}
 
-					stream = client.GetStream();
+					stream = zlibStream != null ? (Stream)zlibStream : (Stream)client.GetStream();
 				}
 
-				return DataResponse.Create(stream, IpAddress, Port);
+				DataResponse response = DataResponse.Create(stream, IpAddress, Port);
+
+                if (response != null && response.ResponseType == DataResponse.Type.Handshake)
+                    ReceiveHandshakeResponse(response);
+				return response;
 			}
 			catch (System.IO.IOException ex)
 			{
@@ -110,11 +122,18 @@ namespace Profiler
 				return client.Connected;
 			}
 		}
-
+		public bool IsCompressedInputNetwork()
+		{
+			lock (criticalSection)
+			{
+				return zlibStream != null;
+			}
+		}
 		private bool CheckConnection()
 		{
 			if (!client.Connected)
 			{
+				zlibStream = null;
 				for (UInt16 currentPort = port; currentPort < port + PORT_RANGE; ++currentPort)
 				{
 					try
@@ -136,6 +155,7 @@ namespace Profiler
 						}
 						else
 						{
+							zlibStream = null;
 							client = new TcpClient();
 						}
 					}
@@ -160,6 +180,26 @@ namespace Profiler
 		}
 		public delegate void ConnectionStateEventHandler(IPAddress address, UInt16 port, State state, String message);
 		public event ConnectionStateEventHandler ConnectionChanged;
+
+		public bool ReceiveHandshakeResponse(DataResponse response)
+		{
+			if (response == null || response.ResponseType != DataResponse.Type.Handshake)
+				return false;
+			lock (criticalSection)
+			{
+				response.Reader.ReadUInt16();//skip
+				uint compressionAlgo = response.Reader.ReadUInt16();
+
+				if ((compressionAlgo & (UInt16)CompressionAlgorithm.ZLIB_ALGO) != 0)
+				{
+					client.GetStream().ReadByte();
+					client.GetStream().ReadByte();
+					zlibStream = new System.IO.Compression.DeflateStream(client.GetStream(), CompressionMode.Decompress);
+				}
+				response.Reader.BaseStream.Seek(0, SeekOrigin.Begin);
+			}
+			return true;
+		}
 
 		public bool SendMessage(Message message, bool autoconnect = false)
 		{

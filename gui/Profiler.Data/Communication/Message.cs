@@ -125,6 +125,8 @@ namespace Profiler.Data
 				uint length = reader.ReadUInt32();
 				UInt16 responseType = reader.ReadUInt16();
 				UInt16 applicationId = reader.ReadUInt16();
+				if (applicationId != NetworkProtocol.OPTICK_APP_ID)
+					return null;
 				byte[] bytes = reader.ReadBytes((int)length);
 
 				return new DataResponse(applicationId, (DataResponse.Type)responseType, version, new BinaryReader(new MemoryStream(bytes)));
@@ -140,7 +142,7 @@ namespace Profiler.Data
 			return DataResponse.Create(stream);
 		}
 
-		public static DataResponse Create(NetworkStream stream, IPAddress ipAddress, UInt16 port)
+		public static DataResponse Create(Stream stream, IPAddress ipAddress, UInt16 port)
 		{
 			DataResponse response = Create(stream);
 			if (response != null)
@@ -165,6 +167,7 @@ namespace Profiler.Data
 		CancelProfiling,
 		Heartbeat,
 		PluginCommand,
+		ConnectedCompression,
 		COUNT
 	}
 
@@ -184,6 +187,19 @@ namespace Profiler.Data
 		public override Int16 GetMessageType()
 		{
 			return (Int32)MessageType.Connected;
+		}
+	}
+	public class ConnectedCompressionMessage : Message
+	{
+		public override Int16 GetMessageType()
+		{
+			return (Int32)MessageType.ConnectedCompression;
+		}
+		public override void Write(BinaryWriter writer)
+		{
+			base.Write(writer);
+			writer.Write((UInt16)Profiler.Data.CompressionAlgorithm.ZLIB_ALGO);
+
 		}
 	}
 	public class HeartbeatMessage : Message
