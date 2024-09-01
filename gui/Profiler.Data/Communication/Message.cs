@@ -40,6 +40,7 @@ namespace Profiler.Data
 			Heartbeat,
 			ReportLiveFrameTime,
 			Plugins,
+			UniqueEvents,
 
 			FiberSynchronizationData = 1 << 8,
 			SyscallPack,

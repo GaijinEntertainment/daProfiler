@@ -755,8 +755,12 @@ namespace Profiler.Data
 
 						break;
 					}
-
-				default:
+                case DataResponse.Type.UniqueEvents:
+                    {
+						//fixme: yet unsupported
+                        break;
+                    }
+                default:
 					{
 						Debug.Fail("Skipping response: ", response.ResponseType.ToString());
 						break;

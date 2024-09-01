@@ -1107,12 +1107,13 @@ namespace Profiler
 
 		public void Connect(IPAddress address, UInt16 port)
 		{
-            ProfilerClient.Get().IpAddress = address;
-            ProfilerClient.Get().Port = port;
+			List<IPAddress> addresses = Platform.GetPCAddresses();
+			bool isNotCompressed = addresses.Contains(address) || address.Address == 16777343;//127.0.0.1 is also local ip
+			ProfilerClient.Get().IpAddress = address;
+			ProfilerClient.Get().Port = port;
 
 			Task.Run(() => {
-				ProfilerClient.Get().SendMessage((Message)new ConnectedCompressionMessage(), true);
-				//isCompressionSupportedOnClient ? (Message)new ConnectedCompressionMessage() : (Message)new ConnectMessage(), true);
+				ProfilerClient.Get().SendMessage(isNotCompressed ? (Message)new ConnectMessage() : (Message)new ConnectedCompressionMessage(), true);
             });
 		}
 	}
