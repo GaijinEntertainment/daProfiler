@@ -421,8 +421,12 @@
     <Compile Include="ViewModels\ScreenShotViewModel.cs" />
     <Compile Include="ViewModels\SummaryViewerModel.cs" />
     <Compile Include="ViewModels\TaskTrackerViewModel.cs" />
+    <Compile Include="ViewModels\UniqueEventsViewModel.cs" />
     <Compile Include="Views\AddressBarView.xaml.cs">
       <DependentUpon>AddressBarView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\UniqueEventsView.xaml.cs">
+      <DependentUpon>UniqueEventsView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\CaptureSettingsView.xaml.cs">
       <DependentUpon>CaptureSettingsView.xaml</DependentUpon>
@@ -519,6 +523,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Views\AddressBarView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\UniqueEventsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

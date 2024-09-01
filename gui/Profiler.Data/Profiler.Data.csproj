@@ -71,6 +71,7 @@
     <Compile Include="SysCall.cs" />
     <Compile Include="Tag.cs" />
     <Compile Include="TraceGroup.cs" />
+    <Compile Include="UniqueEvents.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

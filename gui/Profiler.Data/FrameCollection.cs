@@ -135,6 +135,7 @@ namespace Profiler.Data
 		public FramePack Frames { get; set; }
 		public SynchronizationMap Synchronization { get; set; }
 		public List<DataResponse> Responses { get; set; }
+		public UniqueEventsPack UniqueEventsPack { get; set; }
 
 		public bool IsCoreDataGenerated { get; set; }
 
@@ -379,6 +380,13 @@ namespace Profiler.Data
 					Threads[i].Callstacks = callstacks;
 				}
 			}
+		}
+
+		public void AddUniqueEvents(UniqueEventsPack pack)
+		{
+			System.Diagnostics.Debug.Assert(pack != null && pack.Response != null, "Invalid UniqueEventsPack response");
+
+			UniqueEventsPack = pack;
 		}
 
 		public void AddSummary(SummaryPack summary)
@@ -757,7 +765,14 @@ namespace Profiler.Data
 					}
                 case DataResponse.Type.UniqueEvents:
                     {
-						//fixme: yet unsupported
+						int id = response.Reader.ReadInt32();
+						if (groups.ContainsKey(id))
+						{
+							FrameGroup group = groups[id];
+
+							UniqueEventsPack pack = new UniqueEventsPack(response, group);
+							group.AddUniqueEvents(pack);
+						}
                         break;
                     }
                 default:

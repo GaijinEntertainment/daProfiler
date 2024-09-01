@@ -23,6 +23,7 @@
         <ControlsViewModel:FunctionSummaryViewModel x:Key="FunctionSummaryVM" Origin="MainThread" Title="Per Frame Statistics" StrokeOpacity="0.75" StrokeThickness="2" />
         <ControlsViewModel:FunctionSummaryViewModel x:Key="FunctionThreadSummaryVM" Origin="MainThread" Title="Per Frame/Thread Statistics" StrokeOpacity="0.75" StrokeThickness="2" />
         <ControlsViewModel:FunctionInstanceViewModel x:Key="FunctionInstanceVM" Origin="IndividualCalls" Title="Per Call Statistics" />
+        <ControlsViewModel:UniqueEventsViewModel x:Key="UniqueEventsVM" Title="Unique Events" />
         <ControlsViewModel:AddressBarViewModel x:Key="AddressBarVM" />
         <ControlsViewModel:CaptureSettingsViewModel x:Key="CaptureSettingsVM" />
         <BaseControlsViewModel:MergedEventViewModel x:Key="MergedEventVM" />
@@ -245,6 +246,9 @@
                                     </xcad:LayoutAnchorable>
                                     <xcad:LayoutAnchorable ContentId="instance_list" Title="Function Table (Instances)" CanClose="False">
                                         <ControlsView:FunctionInstanceView x:Name="InstanceHistoryControl" DataContext="{StaticResource FunctionInstanceVM}" Margin="0,0,1,0" />
+                                    </xcad:LayoutAnchorable>
+                                    <xcad:LayoutAnchorable ContentId="unique_events_list" Title="Unique Events" CanClose="False">
+                                        <ControlsView:UniqueEventsView x:Name="UniqueEventsControl" DataContext="{StaticResource UniqueEventsVM}" Margin="0,0,1,0" />
                                     </xcad:LayoutAnchorable>
                                 </xcad:LayoutAnchorablePane>
                             </xcad:LayoutAnchorablePaneGroup>

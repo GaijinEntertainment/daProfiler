@@ -16,7 +16,13 @@ namespace Profiler.Data
 	{
 		public static String ConvertMsToString(double duration)
     	{
-			if (duration < 0.1)
+			if (duration < 0.0001)
+			{
+     			return String.Format(CultureInfo.InvariantCulture, "{0:0.0} ns", duration * 1000000);
+			} else if (duration < 0.01)
+			{
+     			return String.Format(CultureInfo.InvariantCulture, "{0:0.00} us", duration * 1000);
+			} else if (duration < 0.1)
 			{
      			return String.Format(CultureInfo.InvariantCulture, "{0:0.0} us", duration * 1000);
 			} else if (duration < 1.0)
