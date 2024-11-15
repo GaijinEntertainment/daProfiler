@@ -613,7 +613,7 @@ namespace Profiler.Controls
 					if (sample.Path != FileLine.Empty)
 						stringCallstack += $"\t{sample.Path.File}({sample.Path.Line})\n";
 				}
-				Clipboard.SetText(stringCallstack);
+				Clipboard.SetDataObject(stringCallstack);
 			}
 		}
 
