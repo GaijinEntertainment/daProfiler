@@ -419,7 +419,7 @@ namespace Profiler.Controls
 					info += $"Per frame :\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.P90PerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
 					stats = FunctionThreadSummaryVM.Stats;
 					info += $"Per thread:\t|\t{Data.Utils.ConvertMsToString(stats.AvgTotalPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.P90PerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MinPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.MaxPerCall)}\t|\t{Data.Utils.ConvertMsToString(stats.StdDevPerCall)}\n";
-					Clipboard.SetText(info);
+					Clipboard.SetDataObject(info);
 				}
 			}
 		}

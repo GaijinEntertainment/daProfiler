@@ -55,7 +55,7 @@ namespace Profiler.Views
 						info += $"{ue.Description}\t|\t{ue.Calls:00000}\t|\t{ue.Frames:0000}\t|\t{Data.Utils.ConvertMsToString(ue.MinTime)}\t|\t{Data.Utils.ConvertMsToString(ue.MaxTime)}\t|\t{Data.Utils.ConvertMsToString(ue.AvgCall)}\t|\t{Data.Utils.ConvertMsToString(ue.AvgFrame)}\t|\t{Data.Utils.ConvertMsToString(ue.TotalTime)}\n";
 					}
 					if (stats.Count != 0)
-						Clipboard.SetText(info);
+						Clipboard.SetDataObject(info);
 				}
 			}
 		}

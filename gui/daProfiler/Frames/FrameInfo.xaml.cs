@@ -317,7 +317,7 @@ namespace Profiler
 		private void TreeViewCopy_Executed(object sender, ExecutedRoutedEventArgs e)
 		{
 			TreeView tree = (TreeView)sender;
-			Clipboard.SetText(tree.SelectedItem.ToString());
+			Clipboard.SetDataObject(tree.SelectedItem.ToString());
 		}
 	}
 
