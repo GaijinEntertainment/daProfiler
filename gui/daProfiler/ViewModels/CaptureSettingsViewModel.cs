@@ -254,6 +254,8 @@ namespace Profiler.ViewModels
 		{
 			CaptureSettings settings = new CaptureSettings();
 
+			settings.Mode = Mode.OFF;
+
 			foreach (Flag flag in FlagSettings)
 				if (flag.IsEnabled)
 					settings.Mode = settings.Mode | flag.Mask;
