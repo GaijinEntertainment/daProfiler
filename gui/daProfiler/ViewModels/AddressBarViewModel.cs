@@ -151,6 +151,17 @@ namespace Profiler.ViewModels
 
             AddEditableItem();
 
+            string[] commandLineArgs = Environment.GetCommandLineArgs();
+            int ipArgIndex = Array.IndexOf(commandLineArgs, "-ip");
+            int ipValueArgIndex = ipArgIndex + 1;
+            if (ipValueArgIndex > 0 && ipValueArgIndex < commandLineArgs.Length)
+            {
+                ConnectionVM commandLineConnection = new ConnectionVM() { Name = "command_line", Address = commandLineArgs[ipValueArgIndex], CanDelete = false };
+                Connections.Add(commandLineConnection);
+                Select(commandLineConnection.GetConnection());
+                return;
+            }
+
             Select(Settings.LocalSettings.Data.LastConnection);
         }
 
