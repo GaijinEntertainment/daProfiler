@@ -9,7 +9,7 @@ namespace Profiler.Data
 {
     public class CaptureSettings
     {
-		public Mode	Mode { get; set; } = (Mode.EVENTS | Mode.TAGS | Mode.SAMPLING);
+		public Mode	Mode { get; set; } = Mode.OFF;
 		public UInt32 SamplingFrequencyHz { get; set; } = 100;
 		public UInt32 SpikeSamplingFrequencyHz { get; set; } = 1000;
 		public UInt32 ThreadsSamplingRate { get; set; } = 2;
